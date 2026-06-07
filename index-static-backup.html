@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alem do Espelho - Inscrições</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#home" class="brand">Além do Espelho</a>
+      <nav class="site-nav">
+        <a href="#home">Home</a>
+        <a href="#inscricao">Inscrição</a>
+        <a href="#edicoes">Edições</a>
+        <a href="#contato">Contato</a>
+      </nav>
+      <a href="#inscricao" class="btn btn-primary">Inscrever-se</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Festival Alem do Espelho</span>
+          <h1>Evento com inscrição para Anfitrião e Peregrino</h1>
+          <p>Uma experiência completa com som, arte, convivência e muita energia. Inscrições abertas para Anfitrião sem limite e Peregrino com vagas limitadas.</p>
+          <div class="hero-actions">
+            <a href="#inscricao" class="btn btn-primary">Quero me inscrever</a>
+            <a href="#edicoes" class="btn btn-secondary">Ver edições</a>
+          </div>
+        </div>
+        <div class="hero-media">
+          <div class="hero-card">
+            <img src="Panfleto.jpg" alt="Panfleto do evento" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="inscricao">
+      <div class="container section-heading">
+        <span class="eyebrow">Inscrição</span>
+        <h2>Escolha sua categoria</h2>
+        <p>Anfitrião não têm limite de vagas. Peregrino estão limitados a 15 homens e 15 mulheres.</p>
+      </div>
+
+      <div class="container tabs-panel">
+        <div class="tab-buttons">
+          <button class="tab-button active" data-target="Anfitrião">Anfitrião</button>
+          <button class="tab-button" data-target="Peregrino">Peregrino</button>
+        </div>
+
+        <div class="tab-content active" id="Anfitrião">
+          <form id="form-Anfitrião" class="form-card">
+            <h3>Inscrição de Equipante</h3>
+            <label>
+              Nome completo
+              <input type="text" name="nome" required />
+            </label>
+            <label>
+              Email
+              <input type="email" name="email" required />
+            </label>
+            <label>
+              Telefone
+              <input type="tel" name="telefone" />
+            </label>
+            <label>
+              Função ou grupo
+              <input type="text" name="funcao" placeholder="Ex: staff, músico, equipe técnica" />
+            </label>
+            <button type="submit" class="btn btn-primary">Enviar inscrição</button>
+            <p class="form-note">Anfitrião têm vagas ilimitadas e recebem confirmação por email.</p>
+          </form>
+        </div>
+
+        <div class="tab-content" id="Peregrino">
+          <form id="form-Peregrino" class="form-card">
+            <h3>Inscrição de Acampante</h3>
+            <label>
+              Nome completo
+              <input type="text" name="nome" required />
+            </label>
+            <label>
+              Email
+              <input type="email" name="email" required />
+            </label>
+            <label>
+              Telefone
+              <input type="tel" name="telefone" />
+            </label>
+            <label>
+              Gênero
+              <select name="genero" required>
+                <option value="">Selecione</option>
+                <option value="masculino">Masculino</option>
+                <option value="feminino">Feminino</option>
+              </select>
+            </label>
+            <label>
+              Categoria
+              <select name="categoria" required>
+                <option value="">Selecione</option>
+                <option value="completo">Acampante Completo</option>
+                <option value="dia">Acampante Dia</option>
+              </select>
+            </label>
+            <div class="limit-panel">
+              <div>
+                <strong>15</strong>
+                <span>Homens restantes</span>
+              </div>
+              <div>
+                <strong>15</strong>
+                <span>Mulheres restantes</span>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Enviar inscrição</button>
+            <p class="form-note">A cada inscrição, o sistema verifica o limite de Peregrino.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="edicoes">
+      <div class="container section-heading">
+        <span class="eyebrow">Histórico</span>
+        <h2>Edições passadas e desta edição</h2>
+        <p>Veja as edições anteriores, as experiências e as atrações planejadas para este ano.</p>
+      </div>
+      <div class="container cards-grid">
+        <article class="card">
+          <h3>2025 - Além do Espelho</h3>
+          <p>Retomada com muitas atividades artísticas, rodas de convivência e espaço para manifestações.</p>
+        </article>
+        <article class="card">
+          <h3>2024 - Reflexo da Natureza</h3>
+          <p>Temática de sustentabilidade, oficinas e trilhas com imersão criativa.</p>
+        </article>
+        <article class="card">
+          <h3>2023 - Primeiro Encontro</h3>
+          <p>Primeira edição com público reduzido e estrutura acolhedora.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="sobre">
+      <div class="container two-columns">
+        <div>
+          <span class="eyebrow">Sobre o evento</span>
+          <h2>Prazer em viver uma experiência além do comum</h2>
+          <p>O evento mistura música, cultura, convivência e vivências transformadoras. Tudo pensado para ser moderno, elegante e atraente, com transições suaves e um visual cinematográfico.</p>
+          <ul class="feature-list">
+            <li>Animações e efeitos visuais</li>
+            <li>Seções responsivas para celular e desktop</li>
+            <li>Formulário de inscrição separado por categoria</li>
+            <li>Limite seguro para Peregrino</li>
+          </ul>
+        </div>
+        <div class="info-panel">
+          <div class="info-card">
+            <strong>Local</strong>
+            <p>Local ainda será definido - a página está pronta para receber as informações completas.</p>
+          </div>
+          <div class="info-card">
+            <strong>Domínio</strong>
+            <p>alemdoespelhosp.com.br</p>
+          </div>
+          <div class="info-card">
+            <strong>Hospedagem</strong>
+            <p>Locaweb</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-contact" id="contato">
+      <div class="container section-heading">
+        <span class="eyebrow">Contato</span>
+        <h2>Pronto para publicar</h2>
+        <p>Use o FTP da Locaweb e o banco de dados para subir o site e administrar as inscrições.</p>
+      </div>
+      <div class="container contact-grid">
+        <div class="contact-card">
+          <h3>FTP</h3>
+          <p>Host: ftp.alemdoespelhosp.com.br</p>
+          <p>Usuário: alemdoespelhosp1</p>
+          <p>Pasta raiz: /home/alemdoespelhosp1/</p>
+        </div>
+        <div class="contact-card">
+          <h3>Banco de dados</h3>
+          <p>Servidor: alemdoespelho.mysql.dbaas.com.br</p>
+          <p>Usuário: alemdoespelho</p>
+          <p>Senha: IPM@1347New</p>
+          <p>Banco: site</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2026 Além do Espelho. Design inspirado na referência visual informada.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

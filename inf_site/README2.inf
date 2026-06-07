@@ -1,0 +1,140 @@
+Identidade Visual, Estilo e Animações
+O site deve transmitir uma atmosfera moderna, espiritual/transformadora e altamente profissional, inspirada nos sites de referência.
+
+Paleta de Cores: Uso de degradês (gradients) elegantes e modernos. Transições suaves de cores (como um azul profundo para um roxo espiritual, ou tons de aurora/pôr do sol), aplicados em botões, fundos de seções e títulos.
+
+Efeitos e Animações:
+
+Elementos que surgem suavemente na tela conforme o usuário rola a página (fade-in e scroll animations).
+
+Botões com efeitos de brilho ou leve expansão ao passar o mouse.
+
+Efeito Glassmorphism (fundo levemente translúcido, como vidro fosco) nos formulários e cartões de informação.
+
+🗺️ Estrutura de Páginas (Multi-páginas)
+O site será totalmente dividido em páginas independentes, com um menu de navegação fixo no topo.
+
+1. Home (Página Inicial)
+Foco Principal: A Edição Atual do evento.
+
+Conteúdo:
+
+Banner principal com a imagem de referência (#Panfleto.jpg) adaptada para a web.
+
+Contador regressivo para o próximo evento.
+
+Texto institucional e inspirador explicando o propósito da experiência.
+
+Botão de destaque (Chamada para Ação) direcionando para a página de inscrição.
+
+2. Histórico de Edições (Anteriores e Atual)
+Objetivo: Mostrar a linha do tempo e a evolução do evento.
+
+Conteúdo:
+
+Seção de Destaque: Detalhes da edição que está para acontecer (Atual).
+
+Seção Retrô: Uma linha do tempo bonita com fotos, depoimentos e um resumo de todas as edições passadas. Isso gera credibilidade e desejo nos novos visitantes.
+
+3. Inscrição e Cadastro
+Fluxo de Escolha: O usuário entra e escolhe visualmente entre dois caminhos: Quero ser um Peregrino ou Quero ser um Anfitrião.
+
+Regras de Vagas para Peregrinos:
+
+Limite estrito de 15 vagas para Homens e 15 vagas para Mulheres.
+
+O sistema deve exibir um contador de "Vagas Restantes" em tempo real (ex: Apenas 3 vagas masculinas restantes!). Quando atingir 15 de um gênero, o formulário bloqueia automaticamente para aquele gênero.
+
+Regras para Anfitriões:
+
+Sem limite de vagas.
+
+Regra Futura de Bloqueio: O sistema já deve nascer preparado para aceitar Anfitriões apenas se eles já tiverem sido Peregrinos em edições anteriores. Caso contrário, a inscrição fica "Pendente" até que você (Administrador) aprove manualmente no painel.
+
+4. Regras e Informações Gerais
+Página inspirada no modelo do Metamorfose, contendo o regulamento do evento, o que levar, o que é proibido, horários de chegada/saída e perguntas frequentes (FAQ) com efeito de abrir e fechar a resposta (accordion).
+
+💰 Fluxo de Pagamento e Automação Inteligente
+O valor da inscrição é de R$ 150,00 para ambos os tipos de cadastro. O usuário escolhe entre Cartão de Crédito ou PIX.
+
+Como automatizar o PIX Fixo (Chave: 11993813374)?
+Como não haverá uma API de banco gerando PIX dinâmico (com QR Code único por pessoa) neste primeiro momento, usaremos a estratégia do "PIX com Centavos Identificadores" + Tela de Upload.
+
+O Truque dos Centavos (Meio-Automático): Quando o Peregrino ou Anfitrião for finalizar a inscrição, o site não pede exatamente R$ 150,00. Ele gera um valor que identifica o usuário pelos centavos.
+
+Exemplo: O João é o usuário número 24 a se inscrever. O site pede para ele pagar R$ 150,24.
+
+Desta forma, quando você olhar o extrato da sua conta bancária e ver um PIX de R$ 150,24, saberá exatamente que foi o João quem pagou, facilitando a conciliação.
+
+Tela de Confirmação: Após exibir a chave PIX (telefone) e o QR Code fixo na tela, o usuário verá um campo para Anexar o Comprovante (Imagem ou PDF).
+
+Aviso de Recebimento: Assim que ele clica em "Enviar Comprovante", o sistema dispara uma mensagem automática:
+
+Para o WhatsApp ou E-mail do usuário: "Recebemos seu comprovante! Estamos validando sua vaga. Em breve você receberá a confirmação."
+
+Para o seu painel de Administrador (Notificação de nova aprovação pendente).
+
+👑 Painel do Administrador (Área Restrita)
+Uma tela exclusiva para você gerenciar todo o evento sem precisar mexer no banco de dados diretamente.
+
+Painel Geral (Dashboard): Gráficos simples mostrando o total de inscritos, quantas vagas masculinas e femininas de Peregrinos ainda restam, e o total em dinheiro arrecadado.
+
+Gestão de Inscritos: Lista com nome de todos, tipo (Peregrino/Anfitrião) e status do pagamento (Pendente / Aprovado).
+
+Aprovação de PIX: Uma tela onde você vê o comprovante que o usuário enviou. Ao clicar em "Aprovar", o status dele muda para "Confirmado" e o sistema envia um WhatsApp/E-mail automático para ele com as boas-vindas oficiais.
+
+Controle de Anfitriões: Botão para ativar/desativar a regra de "Apenas ex-peregrinos podem ser Anfitriões" e lista para aprovar os Anfitriões manualmente.
+
+📁 Estrutura de Pastas do Projeto
+O projeto será organizado de forma limpa, garantindo que a parte de design fique separada da documentação.
+
+Plaintext
+
+
+📂 nome-do-seu-projeto/
+│
+├── 📂 public/ (Imagens, panfletos, logos, ícones e efeitos visuais)
+│
+├── 📂 paginas/ (Arquivos individuais de cada página: Home, Inscrição, Histórico, Regras, Admin)
+│
+└── 📂 inf_site/ (Sua pasta exclusiva de documentação do desenvolvimento)
+    ├── 📄 README.md (Manual de instruções do site, regras do negócio e como rodar o projeto)
+    ├── 📄 banco_de_dados.sql (A estrutura de tabelas que o programador vai criar)
+        └── 📄 #Panfleto.jpg (A imagem de referência que servirá de base para o design)
+
+Mudanças aplicadas (registro automático)
+
+
+    - Adicionados campos em `edicoes` para configurar limites por edição:
+        - `limite_homens` (INT, default 15)
+        - `limite_mulheres` (INT, default 15)
+        - `limite_anfitrioes` (INT, default 999)
+    - Adicionada tabela `admins` para armazenar credenciais do administrador (planejada migração do admin definido em `config.php`).
+    - Adicionada tabela `admin_actions` para registrar aprovações e ações manuais realizadas pela equipe administrativa (logs).
+
+Como usar as novas configurações de vagas
+
+```sql
+UPDATE edicoes SET limite_homens = 20, limite_mulheres = 20 WHERE ano = 2026;
+```
+
+
+Admin e fluxo de aprovação
+
+    1. Atualizar `payment_status` para `confirmado` na respectiva tabela (`peregrinos` ou `anfitrioes`).
+    2. Preencher `payment_confirmed_by` com o `username` do admin e `payment_confirmed_at` com `NOW()`.
+    3. Inserir um registro em `admin_actions` com `action_type = 'aprovar_pagamento'`, `target_table` e `target_id`.
+
+Exemplo de SQL para aprovar um pagamento (manual):
+```sql
+UPDATE peregrinos SET payment_status = 'confirmado', payment_confirmed_by = 'admin', payment_confirmed_at = NOW() WHERE id = 24;
+INSERT INTO admin_actions (admin_id, action_type, target_table, target_id, notes) VALUES (1, 'aprovar_pagamento', 'peregrinos', 24, 'Aprovado via painel');
+```
+
+Observações e próximas melhorias sugeridas
+
+
+Arquivos modificados recentemente
+
+
+Se quiser, aplico a migração de autenticação do `config.php` para a tabela `admins` e atualizo `admin.php` para usar login via banco (posso gerar a consulta SQL e o patch do PHP)."}
