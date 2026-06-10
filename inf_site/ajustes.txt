@@ -1,0 +1,33 @@
+Nome do Projeto: Alem Do Espelho
+Nome da Edição: O CONFRONTO
+Qual é a Edição 1- Edição
+
+na tela #edicoes.php:
+
+Ter mais informações baseada na imagem #Panfleto.jpg
+A edição atual (1 Edição O CONFRONTO)
+
+ANTERIORES AINDA NAO TEM acrescete mais coisas, para essa pagina...
+
+
+Na pagina #inscricao.php
+Onde esta escrito Anfitrião ajuste o texto, Recomendado para quem ja participu como Peregrino e o valor do anfitrião é 100 reais
+
+pagina de #regras.php:
+
+Separe os valores 
+Peregrino 150 reais
+Anfitrião 100 reais
+
+PAgamento esta sendo implemtnado ainda (remove chave PIX)
+
+Na parte de Duvidas Frequentes....
+
+Como funciona pagamento pix:
+Implementando sistema de pagamento ....
+
+duraçao coloca 2 dias (porem pode haver ajustes nas datas, mas sera avisado)
+
+Acrescente a politica de canclandot (Como a lei ordena)
+
+Apos a compra pode cancelar em ate 7 das corridos, apos isso nao pode cancelar (ajustes texto com a lei)

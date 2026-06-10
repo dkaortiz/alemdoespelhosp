@@ -1,8 +1,8 @@
 <?php
+declare(strict_types=1);
 require_once 'config.php';
 session_start();
 
-// Verificar autenticação
 // Login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
     $username = $_POST['username'] ?? '';
@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
     if (authenticateAdmin($username, $password)) {
         $_SESSION[SESSION_ADMIN_AUTH] = true;
         $_SESSION['admin_username'] = $username;
-        // tentar obter id do admin (se existir na tabela)
         $admin_id = getAdminIdByUsername($username);
         if ($admin_id) $_SESSION['admin_id'] = $admin_id;
         header('Location: admin.php');
@@ -21,60 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
     }
 }
 
-// Ações administrativas (aprovar pagamento)
+// Ações admin
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isAdminAuthenticated()) {
     $action = $_POST['action'];
     $target = $_POST['target'] ?? '';
     $target_id = intval($_POST['target_id'] ?? 0);
     $admin_username = $_SESSION['admin_username'] ?? 'admin';
-    $admin_id = $_SESSION['admin_id'] ?? null;
 
     if ($action === 'approve' && in_array($target, ['peregrinos','anfitrioes'])) {
-        // Atualizar status
-        $table = $target;
-        $stmt = $mysqli->prepare("UPDATE {$table} SET payment_status = 'confirmado', payment_confirmed_by = ?, payment_confirmed_at = NOW() WHERE id = ?");
+        $stmt = $mysqli->prepare("UPDATE {$target} SET payment_status = 'confirmado', payment_confirmed_by = ?, payment_confirmed_at = NOW() WHERE id = ?");
         if ($stmt) {
             $stmt->bind_param('si', $admin_username, $target_id);
             $stmt->execute();
             $stmt->close();
-
-            // Log admin action
-            if ($admin_id) {
-                logAdminAction($admin_id, 'aprovar_pagamento', $table, $target_id, 'Aprovado via painel');
-            }
-        }
-    }
-
-    header('Location: admin.php');
-    exit;
-}
-
-// Gerenciar admins (criar/deletar)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_action']) && isAdminAuthenticated()) {
-    $admin_action = $_POST['admin_action'];
-    $current_admin_id = $_SESSION['admin_id'] ?? null;
-
-    if ($admin_action === 'create_admin') {
-        $new_username = trim($_POST['new_username'] ?? '');
-        $new_password = $_POST['new_password'] ?? '';
-        $new_email = trim($_POST['new_email'] ?? '');
-
-        if (strlen($new_username) >= 3 && strlen($new_password) >= 6) {
-            if (createAdmin($new_username, $new_password, $new_email, 'super')) {
-                // Log criação de admin
-                if ($current_admin_id) {
-                    logAdminAction($current_admin_id, 'criar_admin', 'admins', null, "Novo admin: $new_username");
-                }
-            }
-        }
-    } elseif ($admin_action === 'delete_admin') {
-        $del_admin_id = intval($_POST['del_admin_id'] ?? 0);
-        if ($del_admin_id && $del_admin_id !== $current_admin_id) {
-            if (deleteAdmin($del_admin_id)) {
-                if ($current_admin_id) {
-                    logAdminAction($current_admin_id, 'deletar_admin', 'admins', $del_admin_id, 'Admin deletado');
-                }
-            }
         }
     }
 
@@ -91,32 +49,83 @@ if (!isAdminAuthenticated()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Além do Espelho</title>
     <link rel="stylesheet" href="style.css">
+    <?php include __DIR__ . '/google_analytics.php'; ?>
+    <style>
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(67, 56, 202, 0.3);
+            background: rgba(67, 56, 202, 0.05);
+            color: var(--text);
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(67, 56, 202, 0.1);
+        }
+    </style>
 </head>
 <body>
-    <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f0f23 0%, #1a0f2e 50%, #0f1a23 100%);">
-        <div class="container" style="max-width: 400px;">
-            <div class="glass-strong" style="padding: 3rem; border-radius: 16px; animation: fadeInUp 0.8s ease;">
-                <h1 style="text-align: center; color: var(--primary); margin-bottom: 2rem;">Painel Admin</h1>
+    <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div class="container" style="max-width: 450px;">
+            <div class="glass-strong" style="
+                padding: 3.5rem;
+                border-radius: 20px;
+                animation: fadeInUp 0.8s ease;
+                border: 1px solid rgba(67, 56, 202, 0.3);
+                background: linear-gradient(135deg, rgba(67, 56, 202, 0.08), rgba(124, 58, 237, 0.05));
+            ">
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <h1 style="
+                        font-size: 2rem;
+                        background: linear-gradient(135deg, #4338CA, #7c3aed);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        margin: 0 0 0.5rem;
+                    ">🔐 Painel Admin</h1>
+                    <p style="color: var(--muted); margin: 0;">Acesso restrito</p>
+                </div>
                 
                 <?php if (isset($error)): ?>
-                <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: var(--danger); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <?= htmlspecialchars($error) ?>
+                <div style="
+                    background: rgba(239, 68, 68, 0.15);
+                    border: 1px solid rgba(239, 68, 68, 0.3);
+                    color: #fecaca;
+                    padding: 1rem;
+                    border-radius: 12px;
+                    margin-bottom: 1.5rem;
+                    font-size: 0.95rem;
+                ">
+                    ⚠️ <?php echo htmlspecialchars($error); ?>
                 </div>
                 <?php endif; ?>
 
                 <form method="post">
                     <div class="form-group">
                         <label>Usuário</label>
-                        <input type="text" name="username" placeholder="Usuário" required autofocus>
+                        <input type="text" name="username" placeholder="Seu usuário" required autofocus>
                     </div>
 
                     <div class="form-group">
                         <label>Senha</label>
-                        <input type="password" name="password" placeholder="Senha" required>
+                        <input type="password" name="password" placeholder="Sua senha" required>
                     </div>
 
                     <input type="hidden" name="admin_login" value="1">
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">
+                        🔓 Entrar no Painel
+                    </button>
                 </form>
             </div>
         </div>
@@ -186,6 +195,7 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Além do Espelho</title>
     <link rel="stylesheet" href="style.css">
+    <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .stat-card {
             animation: fadeInUp 0.6s ease forwards;

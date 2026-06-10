@@ -1,3 +1,43 @@
+// ===== EFEITO DE PARTÍCULAS LUMINOSAS =====
+function createParticles() {
+  const container = document.createElement('div');
+  container.id = 'particles-container';
+  container.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  `;
+  document.body.insertBefore(container, document.body.firstChild);
+
+  for (let i = 0; i < 30; i++) {
+    const particle = document.createElement('div');
+    particle.style.cssText = `
+      position: absolute;
+      width: ${2 + Math.random() * 4}px;
+      height: ${2 + Math.random() * 4}px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.8), transparent);
+      border-radius: 50%;
+      top: ${Math.random() * 100}%;
+      left: ${Math.random() * 100}%;
+      box-shadow: 0 0 ${10 + Math.random() * 20}px rgba(124, 58, 237, 0.6);
+      animation: float-particle ${15 + Math.random() * 20}s infinite ease-in-out;
+    `;
+    container.appendChild(particle);
+  }
+}
+
+// ===== EFEITO DE GLOW AO REDOR DO CURSOR =====
+document.addEventListener('mousemove', (e) => {
+  const x = e.clientX / window.innerWidth;
+  const y = e.clientY / window.innerHeight;
+  document.documentElement.style.setProperty('--mouse-x', x);
+  document.documentElement.style.setProperty('--mouse-y', y);
+});
+
 // ===== TAB SWITCHING =====
 const tabButtons = document.querySelectorAll('.tab-button');
 const tabContents = document.querySelectorAll('.tab-content');
@@ -16,6 +56,13 @@ tabButtons.forEach((button) => {
 
 const defaultTab = document.querySelector('.tabs-panel')?.dataset.defaultTab || 'Anfitrião';
 setActiveTab(defaultTab);
+
+// Criar partículas ao carregar
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', createParticles);
+} else {
+  createParticles();
+}
 
 // ===== SCROLL REVEAL ANIMATIONS =====
 const revealElements = document.querySelectorAll(

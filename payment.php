@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 require_once 'config.php';
 session_start();
 
@@ -12,12 +13,8 @@ $reg_type = $_SESSION['registration_type'];
 $pix_amount = $_SESSION['pix_amount'] ?? 150.00;
 
 // Buscar informações do registro
-if ($reg_type === 'peregrino') {
-    $stmt = $mysqli->prepare("SELECT nome, email, pix_cents FROM peregrinos WHERE id = ?");
-} else {
-    $stmt = $mysqli->prepare("SELECT nome, email, pix_cents FROM anfitrioes WHERE id = ?");
-}
-
+$table = $reg_type === 'peregrino' ? 'peregrinos' : 'anfitrioes';
+$stmt = $mysqli->prepare("SELECT nome, email, pix_cents FROM $table WHERE id = ?");
 $stmt->bind_param('i', $reg_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -31,13 +28,8 @@ if (!$row) {
 
 $nome = htmlspecialchars($row['nome']);
 $email = htmlspecialchars($row['email']);
-$pix_cents = $row['pix_cents'];
-
-// Gerar QR Code PIX via Google Charts
-$pix_phone = urlencode(PIX_PHONE);
-$pix_valor = number_format($pix_amount, 2, '.', '');
-$qr_text = "00020126360014br.gov.bcb.pix0136{$pix_phone}520400005303986540510.{$pix_cents}5802BR5913ALEM%20DO%20ESPELHO6009SAO%20PAULO63041D3D";
-$qr_url = "https://chart.googleapis.com/chart?chs=300x300&chld=M|0&cht=qr&chl=" . urlencode($qr_text);
+$pix_cents = (int)$row['pix_cents'];
+$pix_valor_str = number_format($pix_amount, 2, ',', '.');
 
 ?>
 <!DOCTYPE html>
@@ -47,57 +39,163 @@ $qr_url = "https://chart.googleapis.com/chart?chs=300x300&chld=M|0&cht=qr&chl=" 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagamento - Além do Espelho</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .payment-container {
-            max-width: 700px;
-            margin: 2rem auto;
-            animation: fadeInUp 0.6s ease;
-        }
+    <?php include __DIR__ . '/google_analytics.php'; ?>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="header-inner">
+                <?php include __DIR__ . '/header_brand.php'; ?>
+                <div class="site-nav">
+                    <a href="index.php">Home</a>
+                    <a href="edicoes.php">Edições</a>
+                    <a href="inscricao.php">Inscrição</a>
+                    <a href="regras.php">Regras</a>
+                </div>
+            </div>
+        </nav>
+    </header>
 
-        .pix-box {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(244, 208, 63, 0.15));
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 16px;
-            padding: 2rem;
-            margin: 2rem 0;
-            text-align: center;
-            animation: slideInUp 0.6s ease 0.2s backwards;
-        }
+    <main>
+        <section class="section">
+            <div class="container" style="max-width: 700px;">
+                <div class="section-heading">
+                    <h2>💳 Confirmação de Pagamento</h2>
+                    <p>Complete seu pagamento para confirmar a inscrição</p>
+                </div>
 
-        .pix-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 1rem 0;
-            animation: pulse-glow 2s ease-in-out infinite;
-        }
+                <!-- DADOS INSCRIÇÃO -->
+                <div class="glass-strong" style="
+                    padding: 2rem;
+                    margin-bottom: 2rem;
+                    border-radius: 16px;
+                    border: 1px solid rgba(67, 56, 202, 0.2);
+                    animation: fadeInUp 0.6s ease;
+                ">
+                    <h3 style="margin-top: 0; color: var(--primary);">Seus Dados</h3>
+                    <p style="color: var(--muted);">
+                        <strong style="color: var(--text);">Nome:</strong> <?php echo $nome; ?>
+                    </p>
+                    <p style="color: var(--muted);">
+                        <strong style="color: var(--text);">Email:</strong> <?php echo $email; ?>
+                    </p>
+                    <p style="color: var(--muted);">
+                        <strong style="color: var(--text);">Tipo:</strong> <?php echo ucfirst($reg_type); ?>
+                    </p>
+                </div>
 
-        .qr-code {
-            margin: 2rem 0;
-            display: inline-block;
-            padding: 1rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            animation: fadeInUp 0.6s ease 0.4s backwards;
-        }
+                <!-- VALOR PIX -->
+                <div class="glass-strong" style="
+                    background: linear-gradient(135deg, rgba(67, 56, 202, 0.15), rgba(124, 58, 237, 0.1));
+                    border: 2px solid rgba(67, 56, 202, 0.3);
+                    border-radius: 16px;
+                    padding: 2.5rem;
+                    margin-bottom: 2rem;
+                    text-align: center;
+                    animation: slideInUp 0.6s ease 0.2s backwards;
+                ">
+                    <p style="color: var(--muted); margin: 0 0 1rem; font-size: 0.95rem;">Valor a transferir</p>
+                    <div style="
+                        font-size: 3rem;
+                        font-weight: 700;
+                        background: linear-gradient(135deg, #4338CA, #7c3aed);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        margin-bottom: 0.5rem;
+                    ">
+                        R$ <?php echo $pix_valor_str; ?>
+                    </div>
+                    <p style="color: var(--muted); margin: 0; font-size: 0.85rem;">
+                        (Centavos: <?php echo str_pad((string)$pix_cents, 2, '0', STR_PAD_LEFT); ?> = ID <?php echo $reg_id; ?>)
+                    </p>
+                </div>
 
-        .qr-code img {
-            display: block;
-            border-radius: 8px;
-        }
+                <!-- OPÇÕES DE PAGAMENTO -->
+                <div class="tabs" style="margin-bottom: 2rem;">
+                    <button class="tab-btn active" onclick="switchTab(event, 'pix')">🏦 PIX</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'cartao')">💳 Cartão</button>
+                </div>
 
-        .info-box {
-            background: rgba(0, 212, 255, 0.1);
-            border-left: 4px solid var(--accent);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin: 1.5rem 0;
-            animation: slideInLeft 0.6s ease 0.3s backwards;
-        }
+                <!-- TAB PIX -->
+                <div id="tab-pix" class="tab-pane active" style="animation: fadeInUp 0.5s ease;">
+                    <div class="glass-strong" style="padding: 2rem; border-radius: 16px; text-align: center;">
+                        <h3 style="color: var(--primary); margin-top: 0;">Chave PIX Telefone</h3>
+                        <p style="color: var(--muted); margin-bottom: 1.5rem;">
+                            Escaneie o QR Code ou copie a chave abaixo:
+                        </p>
+                        
+                        <div style="
+                            background: white;
+                            padding: 1.5rem;
+                            border-radius: 12px;
+                            display: inline-block;
+                            margin-bottom: 1.5rem;
+                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                        ">
+                            <p style="margin: 0; color: #000; font-weight: 600; font-size: 1.3rem;">
+                                📱 11993813374
+                            </p>
+                        </div>
 
-        .info-box p {
-            margin: 0.5rem 0;
+                        <form action="payment_confirm.php" method="post" style="margin-top: 2rem;">
+                            <input type="hidden" name="registration_id" value="<?php echo $reg_id; ?>">
+                            <input type="hidden" name="registration_type" value="<?php echo htmlspecialchars($reg_type); ?>">
+                            
+                            <label style="display: block; margin-bottom: 1rem; color: var(--muted);">
+                                Tenho comprovante do PIX
+                            </label>
+                            <input type="file" name="comprovante" accept="image/*,.pdf" required style="
+                                display: block;
+                                margin-bottom: 1.5rem;
+                                width: 100%;
+                            ">
+                            
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                ✓ Enviar Comprovante
+                            </button>
+                        </form>
+
+                        <p style="color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
+                            Após enviar o comprovante, você receberá confirmação em 24 horas.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- TAB CARTÃO -->
+                <div id="tab-cartao" class="tab-pane" style="display: none;">
+                    <div class="glass-strong" style="padding: 2rem; border-radius: 16px; text-align: center;">
+                        <h3 style="color: var(--accent); margin-top: 0;">Cartão de Crédito</h3>
+                        <p style="color: var(--muted);">
+                            Integração de cartão em breve. Por favor, use PIX por enquanto.
+                        </p>
+                        <a href="javascript:history.back()" class="btn btn-secondary" style="margin-top: 1rem;">
+                            ← Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Além do Espelho. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(e, tab) {
+            e.preventDefault();
+            document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).style.display = 'block';
+            e.target.classList.add('active');
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
             color: var(--muted);
         }
 

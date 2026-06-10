@@ -11,6 +11,7 @@ $pending_admin = isset($_GET['pending_admin']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmação - Além do Espelho</title>
     <link rel="stylesheet" href="style.css">
+    <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .confirmation-container {
             max-width: 600px;

@@ -1,23 +1,23 @@
 :root {
   color-scheme: dark;
-  /* Degradê Dourado Elegante - Inspirado no Panfleto */
-  --bg: linear-gradient(135deg, #0a0805 0%, #1a1410 50%, #0f0a06 100%);
-  --bg-solid: #0a0805;
-  --surface: rgba(20, 15, 10, 0.95);
-  --surface-glass: rgba(20, 15, 10, 0.6);
-  --surface-strong: rgba(25, 18, 12, 0.97);
-  --text: #f5f0e8;
-  --muted: #b8a88a;
-  --primary: #D4AF37;
-  --primary-strong: #FFD700;
-  --accent: #F4D03F;
-  --accent-secondary: #B8860B;
+  /* Paleta Premium - Preto, Grafite, Azul Petróleo, Roxo, Azul Violeta */
+  --bg: linear-gradient(135deg, #050505 0%, #0F172A 50%, #1a1535 100%);
+  --bg-solid: #050505;
+  --surface: rgba(15, 23, 42, 0.85);
+  --surface-glass: rgba(15, 23, 42, 0.5);
+  --surface-strong: rgba(20, 30, 55, 0.92);
+  --text: #e8eef5;
+  --muted: #8a94ad;
+  --primary: #4338CA;
+  --primary-strong: #5848E8;
+  --accent: #7c3aed;
+  --accent-secondary: #06b6d4;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --border: rgba(212, 175, 55, 0.15);
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  --glow: 0 0 30px rgba(212, 175, 55, 0.4);
+  --border: rgba(67, 56, 202, 0.2);
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  --glow: 0 0 30px rgba(124, 58, 237, 0.3);
 }
 
 * {
@@ -144,8 +144,8 @@ body {
 }
 
 @keyframes titleGlow {
-  0%, 100% { text-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
-  50% { text-shadow: 0 0 40px rgba(212, 175, 55, 0.6), 0 0 60px rgba(244, 208, 63, 0.3); }
+  0%, 100% { text-shadow: 0 0 20px rgba(67, 56, 202, 0.3); }
+  50% { text-shadow: 0 0 40px rgba(124, 58, 237, 0.6), 0 0 60px rgba(124, 58, 237, 0.3); }
 }
 
 @keyframes lineAnimation {
@@ -179,8 +179,8 @@ img {
   top: 0;
   z-index: 10;
   backdrop-filter: blur(16px);
-  background: rgba(10, 8, 5, 0.85);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.08);
+  background: rgba(5, 5, 5, 0.85);
+  border-bottom: 1px solid rgba(67, 56, 202, 0.15);
 }
 
 .page-alert {
@@ -188,8 +188,8 @@ img {
   margin: 1rem auto 0;
   padding: 1rem 1.25rem;
   border-radius: 18px;
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.24);
+  background: rgba(67, 56, 202, 0.12);
+  border: 1px solid rgba(67, 56, 202, 0.24);
   color: #f5f0e8;
   text-align: center;
 }
@@ -211,7 +211,7 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 0;
+  padding: 1.5rem 0;
 }
 
 .brand {
@@ -263,6 +263,8 @@ img {
   color: var(--muted);
   text-decoration: none;
   transition: color 0.2s ease;
+  font-size: 1.05rem;
+  font-weight: 500;
 }
 
 .site-nav a:hover {
@@ -286,24 +288,24 @@ img {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  color: #0a0805;
-  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.35);
+  color: #ffffff;
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.35);
   font-weight: 700;
 }
 
 .btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 18px 50px rgba(212, 175, 55, 0.5);
+  box-shadow: 0 18px 50px rgba(124, 58, 237, 0.5);
 }
 
 .btn-secondary {
   color: var(--text);
-  background: rgba(212, 175, 55, 0.08);
+  background: rgba(67, 56, 202, 0.12);
   border: 1.5px solid var(--primary);
 }
 
 .btn-secondary:hover {
-  background: rgba(212, 175, 55, 0.15);
+  background: rgba(67, 56, 202, 0.22);
   transform: translateY(-3px);
 }
 
@@ -403,7 +405,7 @@ img {
 .section-heading h2 {
   margin: 0.75rem auto 1rem;
   font-size: clamp(2rem, 3vw, 2.8rem);
-  background: linear-gradient(135deg, #D4AF37 0%, #F4D03F 50%, #B8860B 100%);
+  background: linear-gradient(135deg, #4338CA 0%, #7c3aed 50%, #06b6d4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -459,7 +461,7 @@ img {
 .tab-button.active {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   border-color: transparent;
-  box-shadow: 0 12px 24px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 12px 24px rgba(124, 58, 237, 0.3);
 }
 
 .tab-content {
@@ -495,8 +497,8 @@ img {
 
 .form-card input:focus,
 .form-card select:focus {
-  border-color: rgba(212, 175, 55, 0.7);
-  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.08);
+  border-color: rgba(67, 56, 202, 0.7);
+  box-shadow: 0 0 0 4px rgba(67, 56, 202, 0.1);
 }
 
 .form-note {
@@ -592,7 +594,7 @@ img {
 
 .site-footer {
   padding: 1.5rem 0 2.5rem;
-  border-top: 1px solid rgba(212, 175, 55, 0.08);
+  border-top: 1px solid rgba(67, 56, 202, 0.15);
   text-align: center;
   color: var(--muted);
 }
@@ -702,5 +704,24 @@ img {
 
   .form-card {
     gap: 1rem;
+  }
+}
+
+@keyframes float-particle {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  25% { 
+    transform: translate(100px, -100px) scale(1.2);
+    opacity: 0.8;
+  }
+  50% { 
+    transform: translate(-50px, -150px) scale(1);
+    opacity: 0.5;
+  }
+  75% { 
+    transform: translate(80px, -80px) scale(1.1);
+    opacity: 0.6;
   }
 }

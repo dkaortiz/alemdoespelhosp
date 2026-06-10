@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 require_once 'config.php';
 session_start();
 
@@ -9,6 +10,19 @@ $validTypes = ['peregrino', 'anfitriao'];
 if ($type && !in_array($type, $validTypes)) {
     $type = null;
 }
+
+// Função para obter vagas
+function getVagas($mysqli, $genero) {
+    $stmt = $mysqli->prepare("SELECT COUNT(*) as cnt FROM peregrinos WHERE genero = ? AND payment_status = 'confirmado'");
+    $stmt->bind_param('s', $genero);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    return max(0, 15 - ($row['cnt'] ?? 0));
+}
+
+$vagasM = getVagas($mysqli, 'masculino');
+$vagasF = getVagas($mysqli, 'feminino');
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -17,6 +31,7 @@ if ($type && !in_array($type, $validTypes)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscrição - Além do Espelho</title>
     <link rel="stylesheet" href="style.css">
+    <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .choice-card {
             cursor: pointer;
@@ -29,13 +44,165 @@ if ($type && !in_array($type, $validTypes)) {
         .form-container {
             animation: fadeInUp 0.5s ease;
         }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(67, 56, 202, 0.3);
+            background: rgba(67, 56, 202, 0.05);
+            color: var(--text);
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(67, 56, 202, 0.1);
+            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1);
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, rgba(67, 56, 202, 0.15), rgba(124, 58, 237, 0.1));
+            border: 1px solid rgba(67, 56, 202, 0.3);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            animation: slideInUp 0.4s ease;
+            box-shadow: 0 20px 60px rgba(67, 56, 202, 0.3);
+        }
+        
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4338CA, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-text {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+        
+        .modal-highlight {
+            background: rgba(67, 56, 202, 0.1);
+            border-left: 4px solid var(--accent-secondary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: var(--text);
+            font-weight: 600;
+        }
+        
+        .modal-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .modal-btn-whats {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+        }
+        
+        .modal-btn-whats:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+        }
+        
+        .modal-btn-close {
+            background: rgba(67, 56, 202, 0.2);
+            color: var(--text);
+        }
+        
+        .modal-btn-close:hover {
+            background: rgba(67, 56, 202, 0.3);
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- HEADER -->
     <header>
         <nav class="container">
-                <div class="header-inner">
+            <div class="header-inner">
                 <?php include __DIR__ . '/header_brand.php'; ?>
                 <div class="site-nav">
                     <a href="index.php">Home</a>
@@ -60,7 +227,7 @@ if ($type && !in_array($type, $validTypes)) {
 
                 <div class="cards-grid" style="grid-template-columns: repeat(2, 1fr); gap: 3rem; max-width: 1000px; margin: 3rem auto;">
                     <!-- PEREGRINO -->
-                    <a href="?type=peregrino" style="text-decoration: none;">
+                    <div onclick="openInscriptionModal('peregrino')" style="text-decoration: none; cursor: pointer;">
                         <div class="glass-strong choice-card" style="padding: 3rem; text-align: center; border: 2px solid transparent; transition: all 0.3s ease; animation: fadeInUp 0.6s ease;">
                             <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));">🧘</div>
                             <h2 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 1rem;">Peregrino</h2>
@@ -74,24 +241,24 @@ if ($type && !in_array($type, $validTypes)) {
                                 <li>✓ R$ 150,00</li>
                             </ul>
                         </div>
-                    </a>
+                    </div>
 
                     <!-- ANFITRIÃO -->
-                    <a href="?type=anfitriao" style="text-decoration: none;">
+                    <div onclick="openInscriptionModal('anfitriao')" style="text-decoration: none; cursor: pointer;">
                         <div class="glass-strong choice-card" style="padding: 3rem; text-align: center; border: 2px solid transparent; transition: all 0.3s ease; animation: fadeInUp 0.6s ease 0.15s both;">
-                            <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));">👥</div>
-                            <h2 style="color: var(--accent); font-size: 1.8rem; margin-bottom: 1rem;">Anfitrião</h2>
+                            <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.5));">👥</div>
+                            <h2 style="color: var(--accent-secondary); font-size: 1.8rem; margin-bottom: 1rem;">Anfitrião</h2>
                             <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 1.05rem; line-height: 1.8;">
-                                Apoio e suporte aos participantes. Recomendado para quem já participou como Acampante ou recebeu convite especial.
+                                Apoio e suporte aos participantes. <strong style="color: var(--accent-secondary);">Recomendado para quem já participou como Peregrino</strong> e quer contribuir com a experiência.
                             </p>
                             <ul style="list-style: none; color: var(--muted); text-align: left; display: inline-block;">
                                 <li style="margin-bottom: 0.5rem;">✓ Experiência na organização</li>
                                 <li style="margin-bottom: 0.5rem;">✓ Networking profissional</li>
                                 <li style="margin-bottom: 0.5rem;">✓ Função definida</li>
-                                <li>✓ R$ 150,00</li>
+                                <li>✓ <strong style="color: var(--accent-secondary);">R$ 100,00</strong></li>
                             </ul>
                         </div>
-                    </a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -236,6 +403,31 @@ if ($type && !in_array($type, $validTypes)) {
         <?php endif; ?>
     </main>
 
+    <!-- MODAL DE INSCRIÇÃO EM MANUTENÇÃO -->
+    <div id="inscriptionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">🔧</div>
+            <h2 class="modal-title">Sistema em Implementação</h2>
+            <p class="modal-text">
+                Estamos preparando nosso sistema de inscrições com as melhores práticas de segurança e qualidade.
+            </p>
+            <div class="modal-highlight">
+                ⏳ Sistema de pagamento sendo implementado. Retornaremos em breve!
+            </div>
+            <p class="modal-text">
+                Para mais informações e dúvidas sobre inscrição, entre em contato conosco pelo WhatsApp:
+            </p>
+            <div class="modal-cta">
+                <a href="https://wa.me/5511993813374?text=Olá!%20Gostaria%20de%20informações%20sobre%20inscrição%20no%20evento%20O%20Confronto" target="_blank" class="modal-btn modal-btn-whats">
+                    📱 Fale Conosco no WhatsApp
+                </a>
+                <button onclick="closeInscriptionModal()" class="modal-btn modal-btn-close">
+                    ✕ Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer class="site-footer">
         <div class="container">
             <p>&copy; 2026 Além do Espelho. Todos os direitos reservados.</p>
@@ -243,5 +435,28 @@ if ($type && !in_array($type, $validTypes)) {
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        function openInscriptionModal(type) {
+            document.getElementById('inscriptionModal').classList.add('active');
+        }
+        
+        function closeInscriptionModal() {
+            document.getElementById('inscriptionModal').classList.remove('active');
+        }
+        
+        // Fechar modal ao clicar fora
+        document.getElementById('inscriptionModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeInscriptionModal();
+            }
+        });
+        
+        // Fechar modal com tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeInscriptionModal();
+            }
+        });
+    </script>
 </body>
 </html>
