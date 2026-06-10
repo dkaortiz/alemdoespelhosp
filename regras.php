@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Regras e Políticas - Além do Espelho</title>
-    <link rel="stylesheet" href="style.css">
+    <?php $page_title = 'Regras e Políticas - Além do Espelho'; $page_description = 'Conheça as regras, políticas de pagamento, convivência e FAQ do evento. 7 dias de direito de arrependimento por Lei Federal.'; $page_url = 'https://alemdoespelho.com.br/regras.php'; include __DIR__ . '/meta-tags.php'; ?>
+    <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
     <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .accordion-item {
@@ -61,6 +62,11 @@
         <nav class="container">
             <div class="header-inner">
                 <?php include __DIR__ . '/header_brand.php'; ?>
+                <button class="hamburger-menu" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div class="site-nav">
                     <a href="index.php">Home</a>
                     <a href="edicoes.php">Edições</a>
@@ -70,6 +76,13 @@
                 </div>
             </div>
         </nav>
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="index.php">Home</a>
+            <a href="edicoes.php">Edições</a>
+            <a href="inscricao.php">Inscrição</a>
+            <a href="regras.php">Regras</a>
+            <a href="admin.php">Admin</a>
+        </div>
     </header>
 
     <main>
@@ -319,6 +332,21 @@
     </footer>
 
     <script>
+        function toggleMobileMenu() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const menu = document.getElementById('mobileMenu');
+            hamburger.classList.toggle('active');
+            menu.classList.toggle('active');
+        }
+        
+        // Fechar menu ao clicar em um link
+        document.querySelectorAll('.mobile-menu a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.querySelector('.hamburger-menu').classList.remove('active');
+                document.getElementById('mobileMenu').classList.remove('active');
+            });
+        });
+        
         function toggleAccordion(header) {
             const icon = header.querySelector('.accordion-icon');
             const content = header.nextElementSibling;
@@ -328,6 +356,6 @@
             content.classList.toggle('active');
         }
     </script>
-    <script src="script.js"></script>
+    <script src="<?php echo assetVersion('script.js'); ?>"></script>
 </body>
 </html>

@@ -1,4 +1,12 @@
 <?php
+// === CACHE HEADERS - Forçar revalidação em cada acesso ===
+if (!headers_sent()) {
+    // Desabilitar cache para páginas HTML/PHP
+    header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
+
 // Configuração do banco de dados
 $DB_HOST = 'alemdoespelho.mysql.dbaas.com.br';
 $DB_USER = 'alemdoespelho';
@@ -24,6 +32,16 @@ if ($mysqli->connect_errno) {
     die('Falha ao conectar ao banco de dados: ' . $mysqli->connect_error);
 }
 $mysqli->set_charset('utf8mb4');
+
+// === Função de versioning para assets (CSS/JS) ===
+function assetVersion($file) {
+    $path = __DIR__ . '/' . $file;
+    if (file_exists($path)) {
+        $mtime = filemtime($path);
+        return $file . '?v=' . date('YmdHis', $mtime);
+    }
+    return $file . '?v=' . time();
+}
 
 // Constantes de sessão
 define('SESSION_ADMIN_AUTH', 'admin_authenticated');

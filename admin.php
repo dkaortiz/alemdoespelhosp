@@ -48,7 +48,7 @@ if (!isAdminAuthenticated()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Além do Espelho</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
     <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .form-group {
@@ -194,7 +194,7 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Além do Espelho</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
     <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .stat-card {
@@ -380,6 +380,11 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
         <nav class="container">
             <div class="header-inner">
                 <?php include __DIR__ . '/header_brand.php'; ?>
+                <button class="hamburger-menu" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div class="site-nav">
                     <a href="index.php">Home</a>
                     <a href="edicoes.php">Edições</a>
@@ -389,6 +394,14 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                 </div>
             </div>
         </nav>
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="index.php">Home</a>
+            <a href="edicoes.php">Edições</a>
+            <a href="inscricao.php">Inscrição</a>
+            <a href="regras.php">Regras</a>
+            <a href="admin.php">Admin</a>
+            <a href="admin.php?logout=1" style="color: var(--danger);">Sair</a>
+        </div>
         <a href="admin.php?logout=1" class="logout-btn">Sair</a>
     </header>
 
@@ -712,8 +725,23 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="<?php echo assetVersion('script.js'); ?>"></script>
     <script>
+        function toggleMobileMenu() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const menu = document.getElementById('mobileMenu');
+            hamburger.classList.toggle('active');
+            menu.classList.toggle('active');
+        }
+        
+        // Fechar menu ao clicar em um link
+        document.querySelectorAll('.mobile-menu a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.querySelector('.hamburger-menu').classList.remove('active');
+                document.getElementById('mobileMenu').classList.remove('active');
+            });
+        });
+        
         function switchTab(tabName) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {

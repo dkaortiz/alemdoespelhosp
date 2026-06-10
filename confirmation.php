@@ -10,7 +10,8 @@ $pending_admin = isset($_GET['pending_admin']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmação - Além do Espelho</title>
-    <link rel="stylesheet" href="style.css">
+    <?php $page_title = 'Confirmação - Além do Espelho'; $page_description = 'Sua inscrição foi confirmada com sucesso! Prepare-se para uma jornada transformadora.'; $page_url = 'https://alemdoespelho.com.br/confirmation.php'; include __DIR__ . '/meta-tags.php'; ?>
+    <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
     <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .confirmation-container {
@@ -192,6 +193,11 @@ $pending_admin = isset($_GET['pending_admin']);
         <nav class="container">
             <div class="header-inner">
                 <?php include __DIR__ . '/header_brand.php'; ?>
+                <button class="hamburger-menu" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div class="site-nav">
                     <a href="index.php">Home</a>
                     <a href="edicoes.php">Edições</a>
@@ -200,6 +206,12 @@ $pending_admin = isset($_GET['pending_admin']);
                 </div>
             </div>
         </nav>
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="index.php">Home</a>
+            <a href="edicoes.php">Edições</a>
+            <a href="inscricao.php">Inscrição</a>
+            <a href="regras.php">Regras</a>
+        </div>
     </header>
 
     <main>
@@ -314,6 +326,22 @@ $pending_admin = isset($_GET['pending_admin']);
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        function toggleMobileMenu() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const menu = document.getElementById('mobileMenu');
+            hamburger.classList.toggle('active');
+            menu.classList.toggle('active');
+        }
+        
+        // Fechar menu ao clicar em um link
+        document.querySelectorAll('.mobile-menu a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.querySelector('.hamburger-menu').classList.remove('active');
+                document.getElementById('mobileMenu').classList.remove('active');
+            });
+        });
+    </script>
+    <script src="<?php echo assetVersion('script.js'); ?>"></script>
 </body>
 </html>

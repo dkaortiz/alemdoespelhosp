@@ -30,7 +30,8 @@ $vagasF = getVagas($mysqli, 'feminino');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscrição - Além do Espelho</title>
-    <link rel="stylesheet" href="style.css">
+    <?php $page_title = 'Inscrição - Além do Espelho'; $page_description = 'Escolha sua participação: Peregrino ou Anfitrião. Vagas limitadas. Preço: R$ 150,00 ou R$ 100,00.'; $page_url = 'https://alemdoespelho.com.br/inscricao.php'; include __DIR__ . '/meta-tags.php'; ?>
+    <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
     <?php include __DIR__ . '/google_analytics.php'; ?>
     <style>
         .choice-card {
@@ -97,8 +98,10 @@ $vagasF = getVagas($mysqli, 'feminino');
             backdrop-filter: blur(16px);
             border-radius: 20px;
             padding: 3rem;
-            max-width: 500px;
             width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
             text-align: center;
             animation: slideInUp 0.4s ease;
             box-shadow: 0 20px 60px rgba(67, 56, 202, 0.3);
@@ -204,6 +207,11 @@ $vagasF = getVagas($mysqli, 'feminino');
         <nav class="container">
             <div class="header-inner">
                 <?php include __DIR__ . '/header_brand.php'; ?>
+                <button class="hamburger-menu" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div class="site-nav">
                     <a href="index.php">Home</a>
                     <a href="edicoes.php">Edições</a>
@@ -213,6 +221,13 @@ $vagasF = getVagas($mysqli, 'feminino');
                 </div>
             </div>
         </nav>
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="index.php">Home</a>
+            <a href="edicoes.php">Edições</a>
+            <a href="inscricao.php">Inscrição</a>
+            <a href="regras.php">Regras</a>
+            <a href="admin.php">Admin</a>
+        </div>
     </header>
 
     <main>
@@ -225,7 +240,7 @@ $vagasF = getVagas($mysqli, 'feminino');
                     <p>Escolha como deseja participar: <strong>Peregrino</strong> ou <strong>Anfitrião</strong>.</p>
                 </div>
 
-                <div class="cards-grid" style="grid-template-columns: repeat(2, 1fr); gap: 3rem; max-width: 1000px; margin: 3rem auto;">
+                <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1000px; margin: 3rem auto;">
                     <!-- PEREGRINO -->
                     <div onclick="openInscriptionModal('peregrino')" style="text-decoration: none; cursor: pointer;">
                         <div class="glass-strong choice-card" style="padding: 3rem; text-align: center; border: 2px solid transparent; transition: all 0.3s ease; animation: fadeInUp 0.6s ease;">
@@ -434,8 +449,23 @@ $vagasF = getVagas($mysqli, 'feminino');
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="<?php echo assetVersion('script.js'); ?>"></script>
     <script>
+        function toggleMobileMenu() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const menu = document.getElementById('mobileMenu');
+            hamburger.classList.toggle('active');
+            menu.classList.toggle('active');
+        }
+        
+        // Fechar menu ao clicar em um link
+        document.querySelectorAll('.mobile-menu a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.querySelector('.hamburger-menu').classList.remove('active');
+                document.getElementById('mobileMenu').classList.remove('active');
+            });
+        });
+        
         function openInscriptionModal(type) {
             document.getElementById('inscriptionModal').classList.add('active');
         }
