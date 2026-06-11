@@ -115,6 +115,25 @@ $currentEdition = $editions[0] ?? null;
                     <p style="font-size: 1.3rem; color: var(--accent-secondary); margin-bottom: 2rem; font-style: italic; font-weight: 600;">
                         "Um encontro que pode mudar toda a sua história"
                     </p>
+                    
+                    <?php if ($currentEdition['data_inicio'] || $currentEdition['data_fim']): ?>
+                    <div style="background: linear-gradient(135deg, rgba(217, 70, 239, 0.2), rgba(168, 85, 247, 0.1)); border: 2px solid rgba(217, 70, 239, 0.6); padding: 2.5rem; border-radius: 16px; margin-bottom: 2rem; box-shadow: 0 0 30px rgba(217, 70, 239, 0.3); backdrop-filter: blur(16px);">
+                        <p style="color: #d946ef; font-size: 0.8rem; margin: 0 0 1.2rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(217, 70, 239, 0.4);">📅 Data e Local do Evento</p>
+                        <p style="color: #ec4899; font-size: 1.5rem; margin: 0 0 1rem; font-weight: 800; line-height: 1.3;">
+                            <?php 
+                            $data_inicio = formatDatePT($currentEdition['data_inicio']);
+                            $data_fim = formatDatePT($currentEdition['data_fim']);
+                            echo $data_inicio . ' <br/> até <br/> ' . $data_fim;
+                            ?>
+                        </p>
+                        <?php if ($currentEdition['local']): ?>
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(217, 70, 239, 0.3);">
+                            <p style="color: #f472b6; font-size: 1.15rem; margin: 0; font-weight: 600;">📍 <?php echo htmlspecialchars($currentEdition['local']); ?></p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
                         <div style="text-align: center; animation: fadeInUp 0.6s ease 0s backwards;"><span style="font-size: 2.5rem;">❤️</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Confronto com Verdade</p></div>
                         <div style="text-align: center; animation: fadeInUp 0.6s ease 0.1s backwards;"><span style="font-size: 2.5rem;">🎭</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Quebra de Máscaras</p></div>
@@ -124,7 +143,16 @@ $currentEdition = $editions[0] ?? null;
                         <div style="text-align: center; animation: fadeInUp 0.6s ease 0.5s backwards;"><span style="font-size: 2.5rem;">👑</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Identidade</p></div>
                     </div>
                     <p style="margin: 1.5rem 0; font-size: 1.2rem; color: var(--accent); font-weight: 600;">
-                        ⭐ 30 Vagas Limitadas | 💳 R$ 150,00 | 🎯 Inscrições Abertas
+                        ⭐ 30 Vagas Limitadas | 💳 R$ 150,00 | 
+                        <?php 
+                        if ($currentEdition['data_inscricao_inicio'] || $currentEdition['data_inscricao_fim']) {
+                            $data_insc_inicio = formatDatePT($currentEdition['data_inscricao_inicio']);
+                            $data_insc_fim = formatDatePT($currentEdition['data_inscricao_fim']);
+                            echo '🎯 Inscrições: ' . $data_insc_inicio . ' até ' . $data_insc_fim;
+                        } else {
+                            echo '🎯 Inscrições Abertas';
+                        }
+                        ?>
                     </p>
                     <button onclick="openInscriptionModal()" class="btn btn-primary" style="margin-top: 2rem; padding: 1.2rem 3rem; font-size: 1.1rem; animation: bounce-smooth 2s ease-in-out infinite; border: none; cursor: pointer;">
                         🚀 Inscrever-se Agora

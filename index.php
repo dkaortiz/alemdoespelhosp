@@ -19,8 +19,10 @@ function getCountByGender($mysqli, $table, $genero) {
 }
 
 $edition = getCurrentEdition($mysqli);
-$remainingM = max(0, 15 - getCountByGender($mysqli, 'peregrinos', 'masculino'));
-$remainingF = max(0, 15 - getCountByGender($mysqli, 'peregrinos', 'feminino'));
+$limite_homem = $edition['limite_homens'] ?? 15;
+$limite_mulher = $edition['limite_mulheres'] ?? 15;
+$remainingM = max(0, $limite_homem - getCountByGender($mysqli, 'peregrinos', 'masculino'));
+$remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'feminino'));
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -181,7 +183,7 @@ $remainingF = max(0, 15 - getCountByGender($mysqli, 'peregrinos', 'feminino'));
         <section class="section" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(45, 27, 105, 0.6)); backdrop-filter: blur(10px);">
             <div class="container">
                 <div class="section-heading">
-                    <h2>⚡ Edição <?php echo $edition['ano'] ?? 2026; ?> - O Confronto</h2>
+                    <h2>⚡ Edição <?php echo $edition['ano'] ?? 2026; ?> - <?php echo htmlspecialchars($edition['titulo'] ?? 'O Confronto'); ?></h2>
                     <p><?php echo htmlspecialchars($edition['descricao'] ?? 'Um encontro que pode mudar toda a sua história.'); ?></p>
                 </div>
 
@@ -194,7 +196,7 @@ $remainingF = max(0, 15 - getCountByGender($mysqli, 'peregrinos', 'feminino'));
                         <p style="color: var(--muted); text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; font-weight: 600;">
                             Vagas Homens
                         </p>
-                        <p style="color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem;">Limite: 15 peregrinos</p>
+                        <p style="color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem;">Limite: <?php echo $limite_homem; ?> peregrinos</p>
                     </div>
 
                     <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease 0.1s backwards; border: 2px solid rgba(124, 58, 237, 0.5); background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05));">
@@ -205,7 +207,7 @@ $remainingF = max(0, 15 - getCountByGender($mysqli, 'peregrinos', 'feminino'));
                         <p style="color: var(--muted); text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; font-weight: 600;">
                             Vagas Mulheres
                         </p>
-                        <p style="color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem;">Limite: 15 peregrinas</p>
+                        <p style="color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem;">Limite: <?php echo $limite_mulher; ?> peregrinas</p>
                     </div>
 
                     <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease 0.2s backwards; border: 2px solid rgba(6, 182, 212, 0.5); background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.05));">
@@ -220,10 +222,37 @@ $remainingF = max(0, 15 - getCountByGender($mysqli, 'peregrinos', 'feminino'));
                     </div>
                 </div>
 
-                <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(6, 182, 212, 0.3); background: rgba(6, 182, 212, 0.08); border-radius: 12px; text-align: center;">
-                    <p style="color: var(--accent-secondary); font-size: 1.1rem; margin: 0; font-weight: 600;">
-                        ⏰ Inscrições: 2 de Junho - 30 de Junho de 2026
-                    </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <?php if ($edition['data_inicio'] || $edition['data_fim']): ?>
+                    <div style="padding: 2.5rem; border: 2px solid rgba(217, 70, 239, 0.6); background: linear-gradient(135deg, rgba(217, 70, 239, 0.2), rgba(168, 85, 247, 0.1)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(217, 70, 239, 0.3); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease;">
+                        <p style="color: #d946ef; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(217, 70, 239, 0.4);">📅 Datas do Evento</p>
+                        <p style="color: #ec4899; font-size: 1.6rem; margin: 0 0 0.5rem; font-weight: 800; line-height: 1.2;">
+                            <?php 
+                            $data_inicio_fmt = formatDatePT($edition['data_inicio']);
+                            $data_fim_fmt = formatDatePT($edition['data_fim']);
+                            echo $data_inicio_fmt . ' <br/> até <br/> ' . $data_fim_fmt;
+                            ?>
+                        </p>
+                        <?php if ($edition['local']): ?>
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(217, 70, 239, 0.3);">
+                            <p style="color: #f472b6; font-size: 1.1rem; margin: 0; font-weight: 600;">📍 <?php echo htmlspecialchars($edition['local']); ?></p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <div style="padding: 2.5rem; border: 2px solid rgba(6, 182, 212, 0.6); background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.1)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(6, 182, 212, 0.3); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease 0.1s backwards;">
+                        <p style="color: #06b6d4; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);">⏰ Inscrições Abertas</p>
+                        <p style="color: #22d3ee; font-size: 1.4rem; margin: 0; font-weight: 800;">
+                            <?php 
+                            $data_insc_inicio = formatDatePT($edition['data_inscricao_inicio'] ?? '2026-06-02');
+                            $data_insc_fim = formatDatePT($edition['data_inscricao_fim'] ?? '2026-06-30');
+                            $insc_inicio_parts = explode(' ', $data_insc_inicio);
+                            $insc_fim_parts = explode(' ', $data_insc_fim);
+                            echo $insc_inicio_parts[0] . ' de ' . $insc_inicio_parts[2] . ' <br/> até <br/> ' . $insc_fim_parts[0] . ' de ' . $insc_fim_parts[2];
+                            ?>
+                        </p>
+                    </div>
                 </div>
             </div>
         </section>

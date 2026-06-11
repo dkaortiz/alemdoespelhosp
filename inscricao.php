@@ -11,18 +11,24 @@ if ($type && !in_array($type, $validTypes)) {
     $type = null;
 }
 
+// Buscar edição atual com limites
+$edicao = $mysqli->query("SELECT * FROM edicoes ORDER BY ano DESC LIMIT 1");
+$edicao_row = $edicao->fetch_assoc();
+$limite_homem = $edicao_row['limite_homens'] ?? 15;
+$limite_mulher = $edicao_row['limite_mulheres'] ?? 15;
+
 // Função para obter vagas
-function getVagas($mysqli, $genero) {
+function getVagas($mysqli, $genero, $limite) {
     $stmt = $mysqli->prepare("SELECT COUNT(*) as cnt FROM peregrinos WHERE genero = ? AND payment_status = 'confirmado'");
     $stmt->bind_param('s', $genero);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
-    return max(0, 15 - ($row['cnt'] ?? 0));
+    return max(0, $limite - ($row['cnt'] ?? 0));
 }
 
-$vagasM = getVagas($mysqli, 'masculino');
-$vagasF = getVagas($mysqli, 'feminino');
+$vagasM = getVagas($mysqli, 'masculino', $limite_homem);
+$vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -247,7 +253,7 @@ $vagasF = getVagas($mysqli, 'feminino');
                             <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));">🧘</div>
                             <h2 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 1rem;">Peregrino</h2>
                             <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 1.05rem; line-height: 1.8;">
-                                Aprendizado profundo e participação em todas as atividades. Vagas limitadas: 15 homens e 15 mulheres.
+                                Aprendizado profundo e participação em todas as atividades. Vagas limitadas: <?= $limite_homem ?> homens e <?= $limite_mulher ?> mulheres.
                             </p>
                             <ul style="list-style: none; color: var(--muted); text-align: left; display: inline-block;">
                                 <li style="margin-bottom: 0.5rem;">✓ Imersão completa no evento</li>

@@ -1,7 +1,13 @@
 <?php
 declare(strict_types=1);
-require_once 'config.php';
+// Configurar diretório de sessão ANTES de iniciar
+$session_dir = __DIR__ . '/sessions';
+if (!is_dir($session_dir)) {
+    @mkdir($session_dir, 0755, true);
+}
+@session_save_path($session_dir);
 session_start();
+require_once 'config.php';
 
 // Login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
@@ -9,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
     $password = $_POST['password'] ?? '';
 
     if (authenticateAdmin($username, $password)) {
+        session_regenerate_id(true);
         $_SESSION[SESSION_ADMIN_AUTH] = true;
         $_SESSION['admin_username'] = $username;
         $admin_id = getAdminIdByUsername($username);
@@ -20,7 +27,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
     }
 }
 
-// Ações admin
+// Ações admin - Criar novo admin
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_action']) && isAdminAuthenticated()) {
+    $admin_action = $_POST['admin_action'];
+    
+    if ($admin_action === 'create_admin') {
+        $new_username = $_POST['new_username'] ?? '';
+        $new_password = $_POST['new_password'] ?? '';
+        $new_email = $_POST['new_email'] ?? null;
+        
+        if (strlen($new_username) >= 3 && strlen($new_password) >= 6) {
+            if (createAdmin($new_username, $new_password, $new_email ?: null, 'super')) {
+                $success = "✓ Admin '{$new_username}' criado com sucesso!";
+            } else {
+                $error_msg = "✗ Erro ao criar admin. Usuário pode já existir.";
+            }
+        } else {
+            $error_msg = "✗ Usuário deve ter 3+ caracteres e senha 6+ caracteres.";
+        }
+    } elseif ($admin_action === 'delete_admin') {
+        $del_admin_id = intval($_POST['del_admin_id'] ?? 0);
+        if ($del_admin_id > 0 && $del_admin_id !== ($_SESSION['admin_id'] ?? null)) {
+            if (deleteAdmin($del_admin_id)) {
+                $success = "✓ Admin deletado com sucesso!";
+            } else {
+                $error_msg = "✗ Erro ao deletar admin. Talvez seja o único super admin.";
+            }
+        }
+    }
+}
+
+// Ações admin - Aprovar/Rejeitar pagamentos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isAdminAuthenticated()) {
     $action = $_POST['action'];
     $target = $_POST['target'] ?? '';
@@ -69,6 +106,19 @@ if (!isAdminAuthenticated()) {
             color: var(--text);
         }
         .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(67, 56, 202, 0.1);
+        }
+        .form-group select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(67, 56, 202, 0.3);
+            background: rgba(67, 56, 202, 0.05);
+            color: var(--text);
+        }
+        .form-group select:focus {
             outline: none;
             border-color: var(--primary);
             background: rgba(67, 56, 202, 0.1);
@@ -137,6 +187,102 @@ if (!isAdminAuthenticated()) {
 }
 
 // Buscar estatísticas
+$success_msg = $_SESSION['admin_success'] ?? null;
+$error_msg_session = $_SESSION['admin_error'] ?? null;
+unset($_SESSION['admin_success'], $_SESSION['admin_error']);
+
+// Atualizar configurações de limites
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_limits']) && isAdminAuthenticated()) {
+    try {
+        $new_limite_homem = intval($_POST['limite_homem'] ?? 15);
+        $new_limite_mulher = intval($_POST['limite_mulher'] ?? 15);
+        $new_limite_anfitriao = intval($_POST['limite_anfitriao'] ?? 999);
+        
+        // Primeiro, buscar o ID da edição atual
+        $edicao_atual = $mysqli->query("SELECT id FROM edicoes ORDER BY ano DESC LIMIT 1");
+        if (!$edicao_atual) {
+            throw new Exception("Erro na query: " . $mysqli->error);
+        }
+        
+        $edicao_id_row = $edicao_atual->fetch_assoc();
+        if (!$edicao_id_row) {
+            throw new Exception("Nenhuma edição encontrada no banco de dados");
+        }
+        
+        $edicao_id = $edicao_id_row['id'];
+        
+        // Agora atualizar usando o ID
+        $stmt = $mysqli->prepare("UPDATE edicoes SET limite_homens = ?, limite_mulheres = ?, limite_anfitrioes = ? WHERE id = ?");
+        if (!$stmt) {
+            throw new Exception("Erro ao preparar statement: " . $mysqli->error);
+        }
+        
+        $stmt->bind_param('iiii', $new_limite_homem, $new_limite_mulher, $new_limite_anfitriao, $edicao_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Erro ao executar update: " . $stmt->error);
+        }
+        
+        $_SESSION['admin_success'] = "✓ Limites de vagas atualizados com sucesso!";
+        $stmt->close();
+        
+    } catch (Exception $e) {
+        $_SESSION['admin_error'] = "✗ Erro ao atualizar limites: " . $e->getMessage();
+    }
+    
+    header('Location: admin.php#config');
+    exit;
+}
+
+// Atualizar informações da edição
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_edition']) && isAdminAuthenticated()) {
+    try {
+        $edicao_id = intval($_POST['edicao_id'] ?? 0);
+        $titulo = trim($_POST['titulo'] ?? '');
+        $descricao = trim($_POST['descricao'] ?? '');
+        $data_inicio = $_POST['data_inicio'] ?? null;
+        $data_fim = $_POST['data_fim'] ?? null;
+        $local = trim($_POST['local'] ?? '');
+        $data_inscricao_inicio = $_POST['data_inscricao_inicio'] ?? null;
+        $data_inscricao_fim = $_POST['data_inscricao_fim'] ?? null;
+        
+        if (!$titulo) {
+            throw new Exception("Título é obrigatório");
+        }
+        
+        if ($edicao_id <= 0) {
+            throw new Exception("Edição não selecionada");
+        }
+        
+        $stmt = $mysqli->prepare("UPDATE edicoes SET titulo = ?, descricao = ?, data_inicio = ?, data_fim = ?, local = ?, data_inscricao_inicio = ?, data_inscricao_fim = ? WHERE id = ?");
+        if (!$stmt) {
+            throw new Exception("Erro ao preparar statement: " . $mysqli->error);
+        }
+        
+        $stmt->bind_param('sssssssi', $titulo, $descricao, $data_inicio, $data_fim, $local, $data_inscricao_inicio, $data_inscricao_fim, $edicao_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Erro ao executar update: " . $stmt->error);
+        }
+        
+        $_SESSION['admin_success'] = "✓ Edição atualizada com sucesso! Mudanças visíveis em index.php e edicoes.php";
+        $stmt->close();
+        
+    } catch (Exception $e) {
+        $_SESSION['admin_error'] = "✗ Erro ao atualizar edição: " . $e->getMessage();
+    }
+    
+    header('Location: admin.php#edicoes');
+    exit;
+}
+
+// Buscar limites da edição atual
+$edicao = $mysqli->query("SELECT * FROM edicoes ORDER BY ano DESC LIMIT 1");
+$edicao_row = $edicao->fetch_assoc();
+$limite_homem = $edicao_row['limite_homens'] ?? 15;
+$limite_mulher = $edicao_row['limite_mulheres'] ?? 15;
+$limite_anfitriao = $edicao_row['limite_anfitrioes'] ?? 999;
+
 $peregrinos = $mysqli->query("SELECT COUNT(*) as total FROM peregrinos");
 $peregrinos_row = $peregrinos->fetch_assoc();
 $total_peregrinos = $peregrinos_row['total'];
@@ -148,11 +294,6 @@ $total_anfitrioes = $anfitrioes_row['total'];
 $peregrinos_confirmed = $mysqli->query("SELECT COUNT(*) as total FROM peregrinos WHERE payment_status = 'confirmado'");
 $peregrinos_confirmed_row = $peregrinos_confirmed->fetch_assoc();
 $total_confirmed = $peregrinos_confirmed_row['total'];
-
-// Limites configuráveis (salvar em session ou arquivo de config)
-$limite_homem = 15;
-$limite_mulher = 15;
-$limite_anfitriao = 999; // sem limite prático
 
 // Vagas restantes
 $total_vagas_peregrino = $limite_homem + $limite_mulher;
@@ -343,25 +484,6 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
             transform: scale(1.05);
         }
 
-        .logout-btn {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid #ef4444;
-            padding: 0.7rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.3);
-            transform: scale(1.05);
-        }
-
         @keyframes slideInUp {
             from {
                 opacity: 0;
@@ -375,34 +497,67 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
     </style>
 </head>
 <body>
-    <!-- HEADER -->
-    <header>
+    <!-- ADMIN HEADER -->
+    <header style="background: linear-gradient(135deg, rgba(67, 56, 202, 0.15), rgba(124, 58, 237, 0.1)); border-bottom: 2px solid rgba(67, 56, 202, 0.3); backdrop-filter: blur(10px);">
         <nav class="container">
-            <div class="header-inner">
-                <?php include __DIR__ . '/header_brand.php'; ?>
-                <button class="hamburger-menu" onclick="toggleMobileMenu()">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="site-nav">
-                    <a href="index.php">Home</a>
-                    <a href="edicoes.php">Edições</a>
-                    <a href="inscricao.php">Inscrição</a>
-                    <a href="regras.php">Regras</a>
-                    <a href="admin.php">Admin</a>
+            <div class="header-inner" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0;">
+                <!-- BRAND ADMIN -->
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.8rem;">🔐</div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.3rem; color: var(--primary); font-weight: 700;">Painel Admin</h2>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--muted);">Usuário: <span style="color: var(--accent); font-weight: 600;"><?= htmlspecialchars($_SESSION['admin_username']) ?></span></p>
+                    </div>
                 </div>
+
+                <!-- ADMIN MENU (Desktop) -->
+                <div class="site-nav" style="gap: 0; flex: 0; display: none;">
+                    <!-- Items here will be shown only on desktop -->
+                </div>
+
+                <!-- LOGOUT BUTTON -->
+                <a href="admin.php?logout=1" style="
+                    padding: 0.7rem 1.5rem;
+                    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+                    border: 1px solid rgba(239, 68, 68, 0.4);
+                    color: #ef4444;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                " onmouseover="this.style.background='linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.15))'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1))'; this.style.transform='scale(1)'">
+                    🚪 Sair
+                </a>
             </div>
         </nav>
-        <div class="mobile-menu" id="mobileMenu">
-            <a href="index.php">Home</a>
-            <a href="edicoes.php">Edições</a>
-            <a href="inscricao.php">Inscrição</a>
-            <a href="regras.php">Regras</a>
-            <a href="admin.php">Admin</a>
-            <a href="admin.php?logout=1" style="color: var(--danger);">Sair</a>
+
+        <!-- ADMIN STATS BAR (abaixo do header) -->
+        <div style="background: rgba(67, 56, 202, 0.05); border-top: 1px solid rgba(67, 56, 202, 0.2); padding: 1rem 0;">
+            <div class="container">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2rem; text-align: center;">
+                    <div>
+                        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">📊 Total Inscritos</p>
+                        <p style="margin: 0.5rem 0 0; font-size: 1.8rem; font-weight: 700; color: var(--primary);"><?= $total_peregrinos + $total_anfitrioes ?></p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">✅ Confirmados</p>
+                        <p style="margin: 0.5rem 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;"><?= $total_confirmed + $total_anfitrioes_confirmed ?></p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">⏳ Pendentes</p>
+                        <p style="margin: 0.5rem 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;"><?= $pendentes->num_rows ?></p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--muted); font-size: 0.85rem;">💰 Arrecadado</p>
+                        <p style="margin: 0.5rem 0 0; font-size: 1.5rem; font-weight: 700; color: var(--accent);">R$ <?= number_format($total_arrecadado, 0, ',', '.') ?></p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <a href="admin.php?logout=1" class="logout-btn">Sair</a>
     </header>
 
     <main>
@@ -466,35 +621,50 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                 </div>
 
                 <!-- SEÇÃO DE CONFIGURAÇÕES -->
-                <div class="glass-strong" style="padding: 2rem; border-radius: 12px; margin-bottom: 2rem; background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(244, 208, 63, 0.03));">
+                <div id="config" class="glass-strong" style="padding: 2rem; border-radius: 12px; margin-bottom: 2rem; background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(244, 208, 63, 0.03));">
                     <h3 style="color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
-                        ⚙️ Configurações
+                        ⚙️ Configurações - Edição <?= $edicao_row['ano'] ?? 2026 ?>
                     </h3>
-                    <div class="cards-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 1.5rem;">
+                    
+                    <?php if (isset($success_msg)): ?>
+                    <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #86efac; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                        ✓ <?php echo htmlspecialchars($success_msg); ?>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($error_msg_session)): ?>
+                    <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fecaca; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                        ⚠️ <?php echo htmlspecialchars($error_msg_session); ?>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <form method="post" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                        <input type="hidden" name="save_limits" value="1">
+                        
                         <div>
                             <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-size: 0.9rem;">Limite de Homens</label>
                             <div style="display: flex; gap: 0.5rem;">
-                                <input type="number" value="<?= $limite_homem ?>" min="0" style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
-                                <button style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600;">Salvar</button>
+                                <input type="number" name="limite_homem" value="<?= $limite_homem ?>" min="0" required style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                <button type="submit" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600; white-space: nowrap;">✓ OK</button>
                             </div>
                         </div>
 
                         <div>
                             <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-size: 0.9rem;">Limite de Mulheres</label>
                             <div style="display: flex; gap: 0.5rem;">
-                                <input type="number" value="<?= $limite_mulher ?>" min="0" style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
-                                <button style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600;">Salvar</button>
+                                <input type="number" name="limite_mulher" value="<?= $limite_mulher ?>" min="0" required style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                <button type="submit" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600; white-space: nowrap;">✓ OK</button>
                             </div>
                         </div>
 
                         <div>
                             <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-size: 0.9rem;">Limite de Anfitriões</label>
                             <div style="display: flex; gap: 0.5rem;">
-                                <input type="number" value="<?= $limite_anfitriao ?>" min="0" style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
-                                <button style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600;">Salvar</button>
+                                <input type="number" name="limite_anfitriao" value="<?= $limite_anfitriao ?>" min="0" required style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                <button type="submit" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600; white-space: nowrap;">✓ OK</button>
                             </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </section>
@@ -503,14 +673,102 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
         <section class="section">
             <div class="container">
                 <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('pendentes')">⏳ Pendentes de Confirmação</button>
+                    <button class="tab-btn active" onclick="switchTab('cadastro')">➕ Cadastrar Integrante</button>
+                    <button class="tab-btn" onclick="switchTab('pendentes')">⏳ Pendentes de Confirmação</button>
                     <button class="tab-btn" onclick="switchTab('peregrinos')">🧘 Peregrinos</button>
                     <button class="tab-btn" onclick="switchTab('anfitrioes')">👥 Anfitriões</button>
-                    <button class="tab-btn" onclick="switchTab('admins')">🔐 Gerenciar Admins</button>
+                    <button class="tab-btn" onclick="switchTab('edicoes')">📅 Edições</button>
+                    <button class="tab-btn" onclick="switchTab('admins')">🔐 Criar Usuario Admin</button>
+                </div>
+
+                <!-- TAB: CADASTRAR INTEGRANTE -->
+                <div id="cadastro" class="tab-content active">
+                    <div class="glass-strong" style="padding: 2rem; border-radius: 12px;">
+                        <h2 style="color: var(--primary); margin-top: 0;">➕ Cadastrar Novo Integrante</h2>
+                        <p style="color: var(--muted); margin-bottom: 2rem;">Cadastre um peregrino ou anfitrião diretamente no painel</p>
+
+                        <?php if (isset($success_msg)): ?>
+                        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #86efac; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-size: 0.95rem;">
+                            ✓ <?php echo htmlspecialchars($success_msg); ?>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if (isset($error_msg_session)): ?>
+                        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fecaca; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-size: 0.95rem;">
+                            ⚠️ <?php echo htmlspecialchars($error_msg_session); ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <!-- CADASTRO PEREGRINO -->
+                            <div style="background: rgba(67, 56, 202, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary);">
+                                <h3 style="color: var(--primary); margin-top: 0;">🧘 Cadastrar Peregrino</h3>
+                                <form method="post" action="admin_action.php">
+                                    <input type="hidden" name="action" value="admin_cadastro_peregrino">
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Nome Completo *</label>
+                                        <input type="text" name="nome" required style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Email *</label>
+                                        <input type="email" name="email" required style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Gênero *</label>
+                                        <select name="genero" required style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                            <option value="">Selecione...</option>
+                                            <option value="masculino">Masculino ♂️</option>
+                                            <option value="feminino">Feminino ♀️</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Telefone</label>
+                                        <input type="tel" name="telefone" style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">
+                                            <input type="checkbox" name="payment_confirmed" value="1"> ✓ Marcar como pagamento confirmado
+                                        </label>
+                                    </div>
+                                    <button type="submit" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600; margin-top: 1rem;">Cadastrar Peregrino</button>
+                                </form>
+                            </div>
+
+                            <!-- CADASTRO ANFITRIÃO -->
+                            <div style="background: rgba(244, 208, 63, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--accent);">
+                                <h3 style="color: var(--accent); margin-top: 0;">👥 Cadastrar Anfitrião</h3>
+                                <form method="post" action="admin_action.php">
+                                    <input type="hidden" name="action" value="admin_cadastro_anfitriao">
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Nome Completo *</label>
+                                        <input type="text" name="nome" required style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Email *</label>
+                                        <input type="email" name="email" required style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Função *</label>
+                                        <input type="text" name="funcao" placeholder="ex: Cozinheiro, Coordenador..." required style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">Telefone</label>
+                                        <input type="tel" name="telefone" style="padding: 0.75rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="color: var(--muted); font-size: 0.9rem;">
+                                            <input type="checkbox" name="payment_confirmed" value="1"> ✓ Marcar como pagamento confirmado
+                                        </label>
+                                    </div>
+                                    <button type="submit" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--primary)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600; margin-top: 1rem;">Cadastrar Anfitrião</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- TAB: PENDENTES -->
-                <div id="pendentes" class="tab-content active">
+                <div id="pendentes" class="tab-content">
                     <div class="glass-strong" style="padding: 2rem; border-radius: 12px; overflow-x: auto;">
                         <?php if ($pendentes->num_rows > 0): ?>
                             <table>
@@ -658,12 +916,116 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                     </div>
                 </div>
 
+                <!-- TAB: GERENCIAR EDIÇÕES -->
+                <div id="edicoes" class="tab-content">
+                    <div class="glass-strong" style="padding: 2rem; border-radius: 12px;">
+                        <h2 style="color: var(--primary); margin-top: 0;">📅 Gerenciar Edições do Evento</h2>
+                        <p style="color: var(--muted); margin-bottom: 2rem;">Edite as informações das edições. As mudanças aparecerão automaticamente em todo o site.</p>
+
+                        <?php if (isset($success_msg)): ?>
+                        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #86efac; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-size: 0.95rem;">
+                            ✓ <?php echo htmlspecialchars($success_msg); ?>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if (isset($error_msg_session)): ?>
+                        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fecaca; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                            ⚠️ <?php echo htmlspecialchars($error_msg_session); ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php 
+                        $result_editions = $mysqli->query("SELECT * FROM edicoes ORDER BY ano DESC");
+                        $editions_list = $result_editions->fetch_all(MYSQLI_ASSOC);
+                        ?>
+
+                        <?php if (!empty($editions_list)): ?>
+                        <form method="post" style="display: grid; gap: 2rem;">
+                            <input type="hidden" name="save_edition" value="1">
+                            
+                            <div class="form-group">
+                                <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Selecione a Edição</label>
+                                <select name="edicao_id" id="edicaoSelect" required style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%; cursor: pointer; font-size: 1rem;" onchange="loadEditionData()">
+                                    <option value="">-- Selecione uma edição --</option>
+                                    <?php foreach ($editions_list as $ed): ?>
+                                    <option value="<?= $ed['id'] ?>" data-titulo="<?= htmlspecialchars($ed['titulo']) ?>" data-descricao="<?= htmlspecialchars($ed['descricao']) ?>" data-data_inicio="<?= $ed['data_inicio'] ?>" data-data_fim="<?= $ed['data_fim'] ?>" data-local="<?= htmlspecialchars($ed['local']) ?>" data-data_inscricao_inicio="<?= $ed['data_inscricao_inicio'] ?? '' ?>" data-data_inscricao_fim="<?= $ed['data_inscricao_fim'] ?? '' ?>">
+                                        <?= htmlspecialchars($ed['titulo']) ?> (<?= $ed['ano'] ?>)
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Título da Edição</label>
+                                    <input type="text" name="titulo" id="titulo" required style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%;" placeholder="Ex: O Confronto">
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Local do Evento</label>
+                                    <input type="text" name="local" id="local" style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%;" placeholder="Ex: São Paulo - SP">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Descrição</label>
+                                <textarea name="descricao" id="descricao" style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%; min-height: 120px; resize: vertical; font-family: inherit;" placeholder="Descrição da edição..."></textarea>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Data de Início</label>
+                                    <input type="date" name="data_inicio" id="data_inicio" style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Data de Término</label>
+                                    <input type="date" name="data_fim" id="data_fim" style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(168, 85, 247, 0.05)); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(217, 70, 239, 0.2);">
+                                <div class="form-group">
+                                    <label style="display: block; color: #d946ef; margin-bottom: 0.5rem; font-weight: 600;">⏰ Data Início Inscrições</label>
+                                    <input type="date" name="data_inscricao_inicio" id="data_inscricao_inicio" style="padding: 0.85rem; border-radius: 8px; background: rgba(217, 70, 239, 0.15); border: 1px solid #d946ef; color: var(--text); width: 100%;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="display: block; color: #d946ef; margin-bottom: 0.5rem; font-weight: 600;">⏰ Data Término Inscrições</label>
+                                    <input type="date" name="data_inscricao_fim" id="data_inscricao_fim" style="padding: 0.85rem; border-radius: 8px; background: rgba(217, 70, 239, 0.15); border: 1px solid #d946ef; color: var(--text); width: 100%;">
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                                <button type="submit" style="flex: 1; padding: 1rem; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 8px; color: #0a0805; cursor: pointer; font-weight: 600; font-size: 1rem;">💾 Salvar Mudanças</button>
+                                <button type="reset" onclick="document.getElementById('edicaoSelect').value=''; resetForm();" style="flex: 1; padding: 1rem; background: rgba(67, 56, 202, 0.2); border: 1px solid var(--primary); border-radius: 8px; color: var(--text); cursor: pointer; font-weight: 600; font-size: 1rem;">⟲ Limpar</button>
+                            </div>
+                        </form>
+                        <?php else: ?>
+                        <p style="text-align: center; color: var(--muted); padding: 2rem;">Nenhuma edição encontrada. Crie uma primeira edição no banco de dados.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
                 <!-- TAB: GERENCIAR ADMINS -->
                 <div id="admins" class="tab-content">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                         <!-- CRIAR NOVO ADMIN -->
                         <div class="glass-strong" style="padding: 2rem; border-radius: 12px;">
                             <h3 style="color: var(--primary); margin-top: 0;">➕ Criar Novo Admin</h3>
+                            
+                            <?php if (isset($success)): ?>
+                            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #86efac; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                                ✓ <?php echo htmlspecialchars($success); ?>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <?php if (isset($error_msg)): ?>
+                            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fecaca; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                                ⚠️ <?php echo htmlspecialchars($error_msg); ?>
+                            </div>
+                            <?php endif; ?>
+                            
                             <form method="post">
                                 <input type="hidden" name="admin_action" value="create_admin">
                                 <div class="form-group">
@@ -755,6 +1117,33 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
             // Show selected tab
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
+        }
+
+        function loadEditionData() {
+            const select = document.getElementById('edicaoSelect');
+            const option = select.options[select.selectedIndex];
+            
+            if (option.value) {
+                document.getElementById('titulo').value = option.getAttribute('data-titulo') || '';
+                document.getElementById('descricao').value = option.getAttribute('data-descricao') || '';
+                document.getElementById('data_inicio').value = option.getAttribute('data-data_inicio') || '';
+                document.getElementById('data_fim').value = option.getAttribute('data-data_fim') || '';
+                document.getElementById('local').value = option.getAttribute('data-local') || '';
+                document.getElementById('data_inscricao_inicio').value = option.getAttribute('data-data_inscricao_inicio') || '';
+                document.getElementById('data_inscricao_fim').value = option.getAttribute('data-data_inscricao_fim') || '';
+            } else {
+                resetForm();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('titulo').value = '';
+            document.getElementById('descricao').value = '';
+            document.getElementById('data_inicio').value = '';
+            document.getElementById('data_fim').value = '';
+            document.getElementById('local').value = '';
+            document.getElementById('data_inscricao_inicio').value = '';
+            document.getElementById('data_inscricao_fim').value = '';
         }
     </script>
 </body>

@@ -7,6 +7,15 @@ if (!headers_sent()) {
     header('Expires: 0');
 }
 
+// === SESSION CONFIGURATION ===
+$session_dir = __DIR__ . '/sessions';
+if (!is_dir($session_dir)) {
+    @mkdir($session_dir, 0755, true);
+}
+if (!session_id()) {
+    @session_save_path($session_dir);
+}
+
 // Configuração do banco de dados
 $DB_HOST = 'alemdoespelho.mysql.dbaas.com.br';
 $DB_USER = 'alemdoespelho';
@@ -60,6 +69,32 @@ function calculatePixAmount($id) {
 // Função: Formatar valor para exibição
 function formatPrice($amount) {
     return 'R$ ' . number_format($amount, 2, ',', '.');
+}
+
+// Função: Formatar data em português (DD de MÊÊS de YYYY)
+function formatDatePT($date_string, $format = 'completo') {
+    if (!$date_string) return 'Data não definida';
+    
+    $meses = [
+        1 => 'janeiro', 2 => 'fevereiro', 3 => 'março', 4 => 'abril',
+        5 => 'maio', 6 => 'junho', 7 => 'julho', 8 => 'agosto',
+        9 => 'setembro', 10 => 'outubro', 11 => 'novembro', 12 => 'dezembro'
+    ];
+    
+    $timestamp = strtotime($date_string);
+    if ($timestamp === false) return 'Data inválida';
+    
+    $dia = (int)date('d', $timestamp);
+    $mes = (int)date('m', $timestamp);
+    $ano = date('Y', $timestamp);
+    
+    if ($format === 'completo') {
+        return $dia . ' de ' . $meses[$mes] . ' de ' . $ano;
+    } elseif ($format === 'curto') {
+        return $dia . '/' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '/' . $ano;
+    }
+    
+    return $dia . ' de ' . $meses[$mes];
 }
 
 // Função: Redirecionar com mensagem

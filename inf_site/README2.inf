@@ -43,6 +43,17 @@ O site será totalmente dividido em páginas independentes, com um menu de naveg
    ✓ Seção "O Chamado para Transformação" (6 cards com emojis)
    ✓ Footer com copyright
    ✓ Premium animations em todas as seções
+   
+   **✨ NOVO - DINÂMICO (atualizado automaticamente ao editar edição no admin):**
+   ✓ Título da Edição: Vem do banco (ex: "O Confronto" → dinâmico)
+   ✓ Descrição: Vem do banco de dados (é a descrição cadastrada)
+   ✓ Limites de Vagas: Dinâmicos (Homens: <?= $limite_homem ?>, Mulheres: <?= $limite_mulher ?>)
+   ✓ Card com Data e Local em Destaque:
+      * Mostra: "📅 Data de Início - Data de Término"
+      * Exemplo: "15 de junho de 2026 até 16 de junho de 2026"
+      * Exibe o local/cidade do evento (📍 São Paulo - SP)
+   ✓ Grid de Datas ao lado de "Inscrições Abertas"
+   ✓ Todas mudanças refletem em tempo real via admin panel
 
 2. Histórico de Edições (Anteriores e Atual) - edicoes.php ✅
    ✓ Seção de Destaque: "1ª Edição — O Confronto" com 30 vagas
@@ -52,6 +63,16 @@ O site será totalmente dividido em páginas independentes, com um menu de naveg
    ✓ Seção Retrô: Timeline de edições passadas
    ✓ Cards com hover effects e JavaScript animations
    ✓ Responsive grid layout
+   
+   **✨ NOVO - DINÂMICO (atualizado automaticamente ao editar edição no admin):**
+   ✓ Card destacado com "📅 Data e Local":
+      * Mostra datas formatadas em português (não em YYYY-MM-DD)
+      * Exemplo: "15 de junho de 2026 até 16 de junho de 2026"
+      * Exibe o local do evento com emoji (📍 São Paulo - SP)
+      * Background com gradient roxo/transparent
+   ✓ Título dinâmico: Vem do banco (<?php echo htmlspecialchars($currentEdition['titulo']); ?>)
+   ✓ Descrição dinâmica: Carregada do banco de dados
+   ✓ Todas as informações sincronizadas com admin.php
 
 3. Inscrição e Cadastro - inscricao.php ✅
    ✓ Fluxo de Escolha visual (Peregrino vs Anfitrião)
@@ -78,9 +99,84 @@ O site será totalmente dividido em páginas independentes, com um menu de naveg
 ✅ PAINEL DO ADMINISTRADOR - admin.php ✅
    ✓ Tela de login com autenticação via SESSION
    ✓ Design premium com glass-strong effects
-   ✓ Preparado para dashboard com estatísticas
-   ✓ Estrutura pronta para aprovação de pagamentos
-   ✓ Suporte a gestão de Anfitriões
+   ✓ Dashboard completo com estatísticas em tempo real
+   ✓ Aprovação de pagamentos com gestos visuais
+   
+   � **Header do Admin (NOVO - DIFERENCIADO)**
+      - Design exclusivo para usuário logado
+      - NÃO mostra menu público (Home, Edições, Inscrição, Regras, Admin)
+      - Mostra: 🔐 Painel Admin + Usuário Logado
+      - Stats Bar abaixo do header com:
+        * 📊 Total Inscritos (Peregrinos + Anfitriões)
+        * ✅ Total Confirmados
+        * ⏳ Pendentes de Confirmação
+        * 💰 Total Arrecadado
+      - Botão "🚪 Sair" com hover effects
+      - Background: Gradient roxo com blur glassmorphism
+      - Totalmente responsivo em mobile
+   
+   �📋 Menu do Admin (5 Tabs):
+   1. ➕ **Cadastrar Integrante** (NOVO)
+      - Formulário duplo: Peregrino | Anfitrião
+      - Campos: Nome, Email, Gênero/Função, Telefone
+      - Opção de marcar como pagamento confirmado
+      - Mensagens de sucesso/erro em tempo real
+      
+   2. ⏳ Pendentes de Confirmação
+      - Lista de inscritos aguardando aprovação
+      - Botões: Aprovar | Rejeitar
+      - Mostra: Nome, Email, Tipo, Valor PIX, Status
+      
+   3. 🧘 Peregrinos
+      - Todos os peregrinos inscritos
+      - Filtro por: Status de pagamento, Gênero
+      - Mostra: Data de criação, Confirmação
+      
+   4. 👥 Anfitriões
+      - Todos os anfitriões inscritos
+      - Status de pagamento atualizado
+      - Mostra: Função, Data de inscrição
+      
+   5. 🔐 Criar Usuário Admin
+      - Campo: Usuário, Senha, Email
+      - Validação: Username 3+ chars, Senha 6+ chars
+      - Lista de admins cadastrados com opção de deletar
+      - Proteção: Não permite deletar o único super admin
+   
+   ⚙️ **Configurações (NOVO - FUNCIONAL)**
+      - Limite de Homens: Dinâmico do banco de dados
+      - Limite de Mulheres: Dinâmico do banco de dados
+      - Limite de Anfitriões: Dinâmico do banco de dados
+      - Botões "✓ OK" para cada campo
+      - Salvam imediatamente em edicoes.limite_homens/limite_mulheres/limite_anfitrioes
+      - Mensagens de sucesso/erro aparecem no topo
+      - Afeta automaticamente inscricao.php e index.php em tempo real
+   
+   - ✅ **Editar Datas de Inscrição (NOVO - 11/06/2026):**
+      * Campos dinâmicos para Data Início e Fim das inscrições
+      * Destacados em gradient rosa (#d946ef) com visual diferenciado
+      * Formato: Data picker (YYYY-MM-DD no formulário)
+      * Exibição: Formatado em português (DD de MÊS - DD de MÊS)
+      * Aparecem em:
+         - 📱 index.php (Card com datas no formato "DD de MÊS até DD de MÊS")
+         - 📅 edicoes.php (No texto sobre inscrições)
+      * Sincronização em tempo real entre páginas
+      * Se não definidas, usa padrão: 2 de junho até 30 de junho
+   
+   6. 📅 **Gerenciar Edições (NOVO - FUNCIONAL)**
+      - Seletor dropdown com todas as edições cadastradas (ordenadas por ano DESC)
+      - Formulário de edição com campos:
+         * Título da Edição (ex: O Confronto)
+         * Descrição (com textarea para texto longo)
+         * Data de Início (date picker)
+         * Data de Término (date picker)
+         * Local do Evento (ex: São Paulo - SP)
+      - Botões: "💾 Salvar Mudanças" e "⟲ Limpar"
+      - Carregamento automático de dados quando edição é selecionada
+      - Mudanças afetam automaticamente:
+         * index.php - Título, descrição, data, local da edição atual
+         * edicoes.php - Todas as informações das edições listadas
+      - Mensagens de sucesso/erro com confirmação de mudanças
 
 💰 Fluxo de Pagamento e Automação Inteligente ✅
 
@@ -114,6 +210,7 @@ Valores de inscrição:
 ├── 📄 style.css ✅ (Global styling - purple/blue palette)
 ├── 📄 script.js ✅ (Client-side interactions)
 ├── 📄 config.php ✅ (Database & auth config)
+├── 📄 fix-database-schema.php ✅ (Database schema fixer - run in browser)
 └── 📂 inf_site/ ✅
     ├── 📄 README.md (Implementation notes)
     ├── 📄 db.sql (Database structure)
@@ -121,17 +218,65 @@ Valores de inscrição:
 
 ✅ MUDANÇAS APLICADAS NO BANCO DE DADOS:
 
-- Adicionados campos em `edicoes` para configurar limites por edição:
-    - `limite_homens` (INT, default 15)
-    - `limite_mulheres` (INT, default 15)
-    - `limite_anfitrioes` (INT, default 999)
+- Adicionados campos em `edicoes` para configurar informações e limites por edição:
+    - `titulo` VARCHAR(255) - Título da edição (exibido dinamicamente em index.php e edicoes.php)
+    - `descricao` TEXT - Descrição longa da edição (exibida em index.php com htmlspecialchars)
+    - `ano` INT UNIQUE - Ano do evento (identificador único)
+    - `data_inicio` DATE - Data de início do evento (exibida em index.php com formatação de data)
+    - `data_fim` DATE - Data de término do evento (exibida em index.php com formatação de data)
+    - `local` VARCHAR(255) - Local/Cidade do evento (exibida em card destacado em edicoes.php)
+    - `limite_homens` (INT, default 15) - Limite de vagas masculinas (exibido em index.php e inscricao.php)
+    - `limite_mulheres` (INT, default 15) - Limite de vagas femininas (exibido em index.php e inscricao.php)
+    - `limite_anfitrioes` (INT, default 999) - Limite de anfitriões
 - Adicionada tabela `admins` para armazenar credenciais do administrador
 - Adicionada tabela `admin_actions` para registrar aprovações e ações manuais
 
-Como usar as novas configurações de vagas:
+**Fluxo Dinâmico Completo:**
+Quando você edita uma edição no admin panel (📅 Edições tab):
+1. ✏️ Altera campo no formulário (ex: "titulo" de "O Confronto" para "O Desafio")
+2. 💾 Clica em "Salvar Mudanças"
+3. 📊 Banco de dados atualiza a linha da edição (UPDATE edicoes SET titulo = ... WHERE id = ?)
+4. 🔄 **Mudanças aparecem IMEDIATAMENTE em:**
+   - ⬆️ index.php → Título no topo da seção de vagas (h2)
+   - ⬆️ index.php → Card com datas e local em destaque
+   - ⬆️ inscricao.php → Limites de vagas nos cards de escolha
+   - ⬆️ edicoes.php → Card com datas/local na seção de destaque
+
+Como usar as configurações de edições:
 ```sql
-UPDATE edicoes SET limite_homens = 20, limite_mulheres = 20 WHERE ano = 2026;
+UPDATE edicoes SET 
+  titulo = 'O Confronto', 
+  descricao = 'Um encontro que pode mudar toda a sua história',
+  data_inicio = '2026-06-15',
+  data_fim = '2026-06-16',
+  local = 'São Paulo - SP',
+  limite_homens = 20, 
+  limite_mulheres = 20 
+WHERE ano = 2026;
 ```
+
+**Via Admin Panel (Recomendado e 100% Dinâmico):**
+1. Acesse https://seusite.com/admin.php
+2. Faça login com admin/admin123
+3. Clique na aba "📅 Edições"
+4. Selecione a edição desejada
+5. Edite os campos:
+   - **Título da Edição**: O que aparece em index.php (ex: "O Confronto" → muda para "O Desafio")
+   - **Descrição**: Texto descritivo
+   - **Data de Início**: Quando o evento começa
+   - **Data de Término**: Quando o evento termina (formatado automaticamente em português)
+   - **Local**: Cidade/Estado (ex: "São Paulo - SP")
+6. Clique em "💾 Salvar Mudanças"
+7. ⚡ **Mudanças aparecem AUTOMATICAMENTE e em TEMPO REAL em:**
+   - 📱 index.php (Homepage)
+   - 📅 edicoes.php (Página de Edições)
+   - 📝 inscricao.php (Página de Inscrição)
+
+**Formatação de Datas no Frontend:**
+- Formato armazenado no banco: `YYYY-MM-DD` (ex: 2026-06-15)
+- Formato exibido ao usuário: `DD de MÊS - DD de MÊS de YYYY` (ex: "15 de junho - 16 de junho de 2026")
+- Localização: português brasileiro
+- Implementado com: `date('d \d\e F \d\e Y', strtotime($date))`
 
 Admin e fluxo de aprovação:
 
@@ -144,6 +289,87 @@ Exemplo de SQL para aprovar um pagamento (manual):
 UPDATE peregrinos SET payment_status = 'confirmado', payment_confirmed_by = 'admin', payment_confirmed_at = NOW() WHERE id = 24;
 INSERT INTO admin_actions (admin_id, action_type, target_table, target_id, notes) VALUES (1, 'aprovar_pagamento', 'peregrinos', 24, 'Aprovado via painel');
 ```
+
+## 🔄 FLUXO 100% DINÂMICO - ATUALIZADO 11/06/2026 ✅
+
+### O Que Foi Mudado:
+
+**index.php (Homepage):**
+- ✅ Linha 186: Título agora usa `<?php echo htmlspecialchars($edition['titulo'] ?? 'O Confronto'); ?>`
+  - Antes: Hardcoded "⚡ Edição 2026 - O Confronto"
+  - Agora: Dinâmico "⚡ Edição 2026 - [TÍTULO DO BANCO]"
+  
+- ✅ Linhas 195-217: Limites agora dinâmicos
+  - Card Vagas Homens: `Limite: <?php echo $limite_homem; ?> peregrinos`
+  - Card Vagas Mulheres: `Limite: <?php echo $limite_mulher; ?> peregrinas`
+  - Antes: Hardcoded "15 peregrinos" e "15 peregrinas"
+  - Agora: Dinâmico conforme banco de dados
+  
+- ✅ Nova seção com Grid 2 colunas - **NOVO DESIGN DESTACADO (11/06/2026)**:
+  - **Card 1 "📅 Datas do Evento"**: 
+    * ✨ Gradient Rosa (#d946ef → #a855f7) com blur glassmorphism
+    * Datas formatadas em **PORTUGUÊS** (DD de MÊS de YYYY)
+    * Exemplo: "15 de junho de 2026 até 16 de junho de 2026"
+    * Cor: Rosa vibrante (#ec4899) para melhor destaque
+    * Local do evento (📍 São Paulo - SP) em cor #f472b6
+    * Box-shadow com glow effect (30px de blur)
+    * Border 2px em rgba(217, 70, 239, 0.6)
+  - **Card 2 "⏰ Inscrições Abertas"**: 
+    * ✨ Gradient Cyan (#06b6d4 → #22d3ee) com blur glassmorphism
+    * Período padrão de inscrições
+    * Ambas as colunas lado-a-lado em desktop
+    * Stack em mobile (uma embaixo da outra)
+    * Animação fadeInUp com delay
+
+**edicoes.php (Página de Edições):**
+- ✅ Novo card inserido após o título da edição - **NOVO DESIGN DESTACADO (11/06/2026)**
+  - Título: "📅 Data e Local do Evento"
+  - ✨ Gradient Rosa (#d946ef → #a855f7) com blur glassmorphism
+  - Datas formatadas em **PORTUGUÊS** (DD de MÊS de YYYY)
+  - Exemplo: "15 de junho de 2026 até 16 de junho de 2026"
+  - Cor: Rosa vibrante (#ec4899) para melhor destaque
+  - Local com emoji (📍) em cor #f472b6
+  - Box-shadow com glow effect (30px de blur)
+  - Border 2px em rgba(217, 70, 239, 0.6)
+  - Aparece ANTES da grid dos 6 pilares
+  - Mensagem "Data não definida" se datas não forem cadastradas
+  - Separador com border-top para organização visual
+
+**config.php (Backend):**
+- ✅ **Nova função `formatDatePT()`** para formatar datas em português
+  - Parâmetro: `$date_string` (ex: "2026-06-15")
+  - Retorna: "15 de junho de 2026"
+  - Suporta 3 formatos:
+    * `'completo'`: "15 de junho de 2026" (padrão)
+    * `'curto'`: "15/06/2026"
+    * `'mes'`: "15 de junho"
+  - Trata erros: retorna "Data não definida" ou "Data inválida"
+  - Uso: `<?php echo formatDatePT($edition['data_inicio']); ?>`
+
+### Impacto:
+
+Agora quando o admin edita uma edição em admin.php (aba 📅 Edições):
+1. Clica em "Selecionar Edição" e escolhe uma
+2. Edita: Título, Descrição, Data Início, Data Fim, Local
+3. Clica "💾 Salvar Mudanças"
+4. **INSTANTANEAMENTE** aparecem em:
+   - 🏠 index.php (Título na h2, Datas/Local no novo card com design destacado, Limites nos cards de vagas)
+   - 📅 edicoes.php (Datas/Local no card destacado com design melhorado, após o título)
+   - 📝 inscricao.php (Limites atualizados nos cards de escolha)
+
+### Benefício:
+
+✨ **Zero necessidade de editar HTML/CSS diretamente**
+- Tudo é configurável via painel admin
+- Responsivo e pronto para múltiplas edições
+- **Datas formatadas automaticamente em português** (não mais em inglês)
+- Sincronização em tempo real entre páginas
+- **Visual destacado e harmoniZado** com cores diferenciadas:
+  - Rosa (#d946ef, #ec4899, #f472b6) para datas
+  - Cyan (#06b6d4, #22d3ee) para inscrições
+  - Ambos com gradientes, glow effects e animações
+
+---
 
 ✅ TECNOLOGIA IMPLEMENTADA:
 
@@ -173,6 +399,93 @@ INSERT INTO admin_actions (admin_id, action_type, target_table, target_id, notes
 ✓ Duração do evento: 2 dias com aviso de possíveis ajustes
 ✓ Política de cancelamento: 7 dias corridos conforme Lei nº 8.078/1990
 ✓ 1ª Edição — O Confronto com 6 pilares visuais e 30 vagas
+
+---
+
+## 📅 DATAS DE INSCRIÇÃO DINÂMICAS - NOVO 11/06/2026 ✅
+
+### Campos do Banco de Dados:
+- `data_inscricao_inicio` DATE - Data de início das inscrições
+- `data_inscricao_fim` DATE - Data de término das inscrições
+- Armazenadas em formato: YYYY-MM-DD (ex: 2026-06-02)
+- Exibidas em português: DD de MÊS (ex: 2 de junho)
+
+### Como Gerenciar (Admin Panel):
+
+1. Acesse admin.php → Aba "📅 Edições"
+2. Selecione a edição desejada
+3. Vá para a seção "⏰ Data Início Inscrições" e "⏰ Data Término Inscrições"
+   - **Visual destacado:** Gradient rosa (#d946ef) com border e fundo roxo semi-transparente
+   - **Campos:** Date pickers (padrão HTML5)
+4. Selecione as datas desejadas
+5. Clique em "💾 Salvar Mudanças"
+6. **Mudanças aparecem em tempo real:**
+   - index.php → Card "⏰ Inscrições Abertas" (formato: "DD de MÊS até DD de MÊS")
+   - edicoes.php → Linha com datas de inscrição
+
+### Exibição em index.php:
+
+**Card com design Cyan:**
+```php
+<div style="padding: 2.5rem; border: 2px solid rgba(6, 182, 212, 0.6); 
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.1));">
+    <p style="color: #06b6d4; ...">⏰ Inscrições Abertas</p>
+    <p style="color: #22d3ee; ...">
+        2 de Junho <br/> até <br/> 30 de Junho
+    </p>
+</div>
+```
+
+### Exibição em edicoes.php:
+
+**No texto sobre inscrições:**
+```php
+<?php 
+    if ($currentEdition['data_inscricao_inicio'] || $currentEdition['data_inscricao_fim']) {
+        $data_insc_inicio = formatDatePT($currentEdition['data_inscricao_inicio']);
+        $data_insc_fim = formatDatePT($currentEdition['data_inscricao_fim']);
+        echo '🎯 Inscrições: ' . $data_insc_inicio . ' até ' . $data_insc_fim;
+    }
+?>
+```
+
+### Valores Padrão:
+- Se não definidos: 2 de junho até 30 de junho
+- Fallback utiliza padrão da edição 2026
+
+### Sincronização:
+- ✅ Atualizar admin → Aparecem em index.php
+- ✅ Atualizar admin → Aparecem em edicoes.php
+- ✅ Datas formatadas automaticamente em português
+- ✅ Sem necessidade de editar HTML/CSS
+
+---
+
+## ✅ CHECKLIST DE DATAS EM PORTUGUÊS - 11/06/2026 ✅
+
+- [✓] Função `formatDatePT()` criada em config.php
+- [✓] Suporta 3 formatos: completo, curto, mes
+- [✓] Datas em index.php convertidas para português
+- [✓] Datas em edicoes.php convertidas para português
+- [✓] Card de datas do evento em index.php com design destacado (rosa/gradient)
+- [✓] Card de datas do evento em edicoes.php com design destacado (rosa/gradient)
+- [✓] Card de inscrições em index.php com design destacado (cyan/gradient)
+- [✓] Cores harmoniZadas: Rosa (#d946ef) + Cyan (#06b6d4)
+- [✓] Glassmorphism effects em cards de datas
+- [✓] Box-shadow com glow effect
+- [✓] Animações fadeInUp
+- [✓] Separador de local com border-top em cards
+- [✓] Responsivo em mobile (cards stackam)
+- [✓] **NOVO:** Campos de data de inscrição dinâmicos em admin.php
+- [✓] **NOVO:** Datas de inscrição em gradient rosa com visual diferenciado
+- [✓] **NOVO:** Campos data_inscricao_inicio e data_inscricao_fim no banco
+- [✓] **NOVO:** Exibição dinâmica em index.php (Card Cyan com datas)
+- [✓] **NOVO:** Exibição dinâmica em edicoes.php (No texto de inscrições)
+- [✓] **NOVO:** fix-database-schema.php atualizado com novos campos
+- [✓] db.sql atualizado com documentação
+- [✓] README2.inf documentado com tudo
+
+---
 
 ✅ OBSERVAÇÕES E STATUS FINAL:
 
@@ -396,7 +709,73 @@ INSERT INTO admin_actions (admin_id, action_type, target_table, target_id, notes
 
 ---
 
-## 📋 PRÓXIMOS PASSOS - REGISTRAR NOS MECANISMOS DE BUSCA ✅
+## � AUTENTICAÇÃO E SESSÕES - NOVO IMPLEMENTADO ✅
+
+### 1. Sistema de Admin Seguro ✅
+- Tabela `admins` com `password_hash` (usando PHP `password_hash()` com algoritmo bcrypt)
+- Função `authenticateAdmin()` em `config.php` com `password_verify()`
+- Autenticação baseada em SESSION segura
+- `session_regenerate_id(true)` após login bem-sucedido para evitar session fixation attacks
+
+### 2. Diretório de Sessões ✅
+**Problema Encontrado:**
+- Caminho original `/home/alemdoespelhosp1/tmp` não existia no servidor
+- Sessões não eram salvas no disco
+- Login funcionava mas não persistia após redirect
+
+**Solução Implementada:**
+- Diretório `/sessions/` criado na raiz do projeto
+- Arquivo `.htaccess` dentro de `/sessions/` nega acesso HTTP (`Deny from all`)
+- `session_save_path()` configurado em `admin.php` e `config.php`
+- Mkdir automático: `if (!is_dir($session_dir)) { @mkdir($session_dir, 0755, true); }`
+
+### 3. Configuração em admin.php ✅
+```php
+<?php
+declare(strict_types=1);
+// Configurar diretório de sessão ANTES de iniciar
+$session_dir = __DIR__ . '/sessions';
+if (!is_dir($session_dir)) {
+    @mkdir($session_dir, 0755, true);
+}
+@session_save_path($session_dir);
+session_start();
+require_once 'config.php';
+```
+
+### 4. Credenciais Padrão ✅
+- **Usuário**: `admin`
+- **Senha**: `admin123`
+- Hash armazenado em `admins.password_hash`
+- Gerado com: `password_hash('admin123', PASSWORD_DEFAULT)`
+
+### 5. Regeneração de Senha ✅
+- Arquivo `gerar-hash.php` para atualizar senha do admin
+- Executa: `UPDATE admins SET password_hash = ? WHERE username = 'admin'`
+- Útil se esquecer a senha ou para mudar credenciais
+
+### 6. Login Workflow ✅
+1. Usuário acessa `/admin.php`
+2. Se não autenticado, exibe formulário de login
+3. Submete credentials via POST
+4. `authenticateAdmin()` valida contra tabela `admins`
+5. Se válido: `session_regenerate_id(true)` + `$_SESSION['admin_authenticated'] = true`
+6. Redirect para `/admin.php` (agora mostra dashboard)
+7. `isAdminAuthenticated()` verifica: `$_SESSION['admin_authenticated'] === true && !empty($_SESSION['admin_username'])`
+
+### 7. Logout ✅
+- Link "Sair" em `/admin.php?logout=1`
+- Executa: `session_destroy()`
+- Redireciona para formulário de login
+
+### 8. Proteção de Rotas ✅
+- Todas as ações admin verificam `isAdminAuthenticated()` antes de executar
+- Exemplo: `if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isAdminAuthenticated())`
+- Protege contra CSRF e acesso não autorizado
+
+---
+
+
 
 ### Google Search Console (PRIORIDADE 1)
 1. Acesse: https://search.google.com/search-console
@@ -461,7 +840,147 @@ INSERT INTO admin_actions (admin_id, action_type, target_table, target_id, notes
 
 ---
 
-## ✅ CHECKLIST FINAL - TUDO IMPLEMENTADO
+## 📅 FORMATAÇÃO DE DATAS EM PORTUGUÊS - NOVO 11/06/2026 ✅
+
+### Função `formatDatePT()` em config.php:
+
+**Objetivo:** Converter datas MySQL (YYYY-MM-DD) para português (DD de MÊS de YYYY)
+
+**Assinatura:**
+```php
+formatDatePT($date_string, $format = 'completo')
+```
+
+**Parâmetros:**
+- `$date_string`: Data em formato MySQL (ex: "2026-06-15") ou qualquer string parseável por strtotime()
+- `$format`: Tipo de formatação desejada:
+  - `'completo'`: "15 de junho de 2026" *(padrão)*
+  - `'curto'`: "15/06/2026"
+  - `'mes'`: "15 de junho"
+
+**Retorno:**
+- Data formatada em português se válida
+- "Data não definida" se `$date_string` for vazio/null
+- "Data inválida" se strtotime() não conseguir fazer parsing
+
+**Exemplo de Uso:**
+```php
+<?php
+require 'config.php';
+
+$edition = [
+    'data_inicio' => '2026-06-15',
+    'data_fim' => '2026-06-16'
+];
+
+// Formato completo (padrão)
+echo formatDatePT($edition['data_inicio']);
+// Output: 15 de junho de 2026
+
+// Formato curto
+echo formatDatePT($edition['data_inicio'], 'curto');
+// Output: 15/06/2026
+
+// Apenas mês
+echo formatDatePT($edition['data_inicio'], 'mes');
+// Output: 15 de junho
+?>
+```
+
+### Onde é Usada:
+
+**index.php (Linhas ~225-230):**
+```php
+$data_inicio_fmt = formatDatePT($edition['data_inicio']);
+$data_fim_fmt = formatDatePT($edition['data_fim']);
+echo $data_inicio_fmt . ' <br/> até <br/> ' . $data_fim_fmt;
+// Output: 15 de junho de 2026 <br/> até <br/> 16 de junho de 2026
+```
+
+**edicoes.php (Linhas ~119-124):**
+```php
+$data_inicio = formatDatePT($currentEdition['data_inicio']);
+$data_fim = formatDatePT($currentEdition['data_fim']);
+echo $data_inicio . ' <br/> até <br/> ' . $data_fim;
+```
+
+### Meses em Português:
+```php
+janeiro, fevereiro, março, abril, maio, junho,
+julho, agosto, setembro, outubro, novembro, dezembro
+```
+
+---
+
+## 🎨 PALETA DE CORES PARA DATAS - DESIGN DESTACADO 11/06/2026 ✅
+
+### Card de Datas do Evento (index.php e edicoes.php):
+
+**Cor Primária - ROSA VIBRANTE:**
+- `#d946ef` - Border (2px solid)
+- `#ec4899` - Texto de datas (font-size 1.5rem-1.6rem, font-weight 800)
+- `#f472b6` - Texto do local (📍)
+
+**Gradient Background:**
+```css
+background: linear-gradient(135deg, rgba(217, 70, 239, 0.2), rgba(168, 85, 247, 0.1));
+```
+
+**Efeitos Visuais:**
+- `box-shadow: 0 0 30px rgba(217, 70, 239, 0.3)` - Glow effect rosa
+- `backdrop-filter: blur(16px)` - Glassmorphism
+- `border-radius: 16px` - Cantos arredondados
+- `text-shadow: 0 0 10px rgba(217, 70, 239, 0.4)` - Brilho no rótulo
+
+**Animação:**
+- `animation: fadeInUp 0.6s ease` - Entrada suave
+
+---
+
+### Card de Inscrições Abertas (index.php):
+
+**Cor Primária - CYAN VIBRANTE:**
+- `#06b6d4` - Border (2px solid)
+- `#22d3ee` - Texto (font-size 1.4rem, font-weight 800)
+
+**Gradient Background:**
+```css
+background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.1));
+```
+
+**Efeitos Visuais:**
+- `box-shadow: 0 0 30px rgba(6, 182, 212, 0.3)` - Glow effect cyan
+- `backdrop-filter: blur(16px)` - Glassmorphism
+- `border-radius: 16px` - Cantos arredondados
+- `text-shadow: 0 0 10px rgba(6, 182, 212, 0.4)` - Brilho no rótulo
+
+**Animação:**
+- `animation: fadeInUp 0.6s ease 0.1s backwards` - Entrada com delay
+
+---
+
+### Por Que Rosa + Cyan?
+
+✅ **Harmonia Visual:**
+- Rosa (#d946ef) é complementar a cyan no espectro
+- Ambas vibrantes e chamam atenção
+- Diferenciam claramente dois tipos de informação
+
+✅ **Contraste e Acessibilidade:**
+- Cores vibrantes garantem boa legibilidade
+- Ótimo contraste contra fundo escuro
+
+✅ **Design Moderno:**
+- Alinha-se com design systems contemporâneos
+- Glassmorphism + gradientes = look premium
+
+✅ **Sincronização com Paleta Existente:**
+- Roxo (#4338CA) → Rosa (#d946ef) - Transição suave
+- Cyan (#06b6d4) → Já estava na paleta
+
+---
+
+## ✅ CHECKLIST DE DATAS EM PORTUGUÊS
 
 ### Performance e Cache:
 - [✓] HTTPS forçado via .htaccess

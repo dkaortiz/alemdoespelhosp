@@ -1,5 +1,6 @@
 -- Schema para Além do Espelho - Versão 2.0
 -- Refatorado com Peregrinos e Anfitriões
+-- Atualização 11/06/2026: Datas formatadas em português com visual destacado
 
 USE alemdoespelho;
 
@@ -49,24 +50,29 @@ CREATE TABLE IF NOT EXISTS anfitrioes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- TABELA: EDIÇÕES
+-- Campos de data (data_inicio, data_fim) são armazenados em formato YYYY-MM-DD
+-- e exibidos em português via função formatDatePT() em config.php
+-- Exemplo: 2026-06-15 é exibido como "15 de junho de 2026"
 CREATE TABLE IF NOT EXISTS edicoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    ano INT NOT NULL UNIQUE,
-    data_inicio DATE,
-    data_fim DATE,
-    local VARCHAR(255),
+    titulo VARCHAR(255) NOT NULL COMMENT 'Título da edição (exibido em index.php, edicoes.php)',
+    descricao TEXT COMMENT 'Descrição da edição (exibida em index.php)',
+    ano INT NOT NULL UNIQUE COMMENT 'Ano do evento (identificador único)',
+    data_inicio DATE COMMENT 'Data de início (formatada em PT: DD de MÊS de YYYY)',
+    data_fim DATE COMMENT 'Data de término (formatada em PT: DD de MÊS de YYYY)',
+    local VARCHAR(255) COMMENT 'Local/Cidade do evento (exibida em card destacado)',
     limite_homens INT DEFAULT 15 COMMENT 'Limite de vagas masculinas para esta edição',
     limite_mulheres INT DEFAULT 15 COMMENT 'Limite de vagas femininas para esta edição',
     limite_anfitrioes INT DEFAULT 999 COMMENT 'Limite de anfitriões (geralmente sem limite)',
+    data_inscricao_inicio DATE COMMENT 'Data de início das inscrições (formatada em PT: DD de MÊS de YYYY)',
+    data_inscricao_fim DATE COMMENT 'Data de término das inscrições (formatada em PT: DD de MÊS de YYYY)',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_ano (ano)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Inserir edição inicial
-INSERT IGNORE INTO edicoes (titulo, descricao, ano, local) VALUES 
-('Além do Espelho', 'Um encontro que pode mudar toda a sua história', 2026, 'Local a definir');
+INSERT IGNORE INTO edicoes (titulo, descricao, ano, data_inicio, data_fim, local, data_inscricao_inicio, data_inscricao_fim) VALUES 
+('O Confronto', 'Um encontro que pode mudar toda a sua história', 2026, '2026-06-15', '2026-06-16', 'São Paulo - SP', '2026-06-02', '2026-06-30');
 
 -- TABELA: ADMINS (para futuras migrações - credenciais podem ser migradas do config.php)
 CREATE TABLE IF NOT EXISTS admins (
@@ -96,4 +102,15 @@ CREATE TABLE IF NOT EXISTS admin_actions (
 -- MIGRATION: Se você já tinha as tabelas antigas, use estes comandos:
 -- RENAME TABLE Anfitrião TO anfitrioes_backup;
 -- RENAME TABLE Peregrino TO peregrinos_backup;
+
+-- OBSERVAÇÕES SOBRE FORMATAÇÃO DE DATAS (Atualizado 11/06/2026):
+-- 1. Datas são armazenadas no banco em formato YYYY-MM-DD (ex: 2026-06-15)
+-- 2. Função formatDatePT() em config.php converte para português (ex: "15 de junho de 2026")
+-- 3. Uso: <?php echo formatDatePT($edition['data_inicio']); ?>
+-- 4. Exibição em index.php: Card com design destacado (gradient rosa #d946ef, text #ec4899)
+-- 5. Exibição em edicoes.php: Card com design destacado, antes da grid dos 6 pilares
+-- 6. Visual melhorado: Borders, box-shadow, animações, cores harmoniZadas
+-- 7. Campos de inscrição (data_inscricao_inicio e data_inscricao_fim) são dinâmicos e gerenciáveis no admin
+-- 8. Datas de inscrição exibidas em cards com destaque especial (gradient amber/laranja)
+-- 9. Formatação automática em português: "DD de MÊS - DD de MÊS de YYYY"
 
