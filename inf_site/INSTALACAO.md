@@ -72,13 +72,86 @@ Após upload:
   - Usuário: `admin`
   - Senha: `SenhaAdmin@2026`
 
-## 4. Alterações importantes
+## 4. Novo fluxo de cadastro
+
+O formulário agora deve aceitar duas opções de inscrição:
+- **Anfitrião**
+- **Peregrino**
+
+Campos obrigatórios recomendados:
+- Nome
+- Telefone
+- Endereço
+- Tem problema de saúde? (Sim ou Não)
+- Se sim, informar quais problemas
+- Usa remédio? (Sim ou Não)
+- Se sim, informar qual remédio e em que horários
+
+Esse formulário deve ser ajustado no arquivo que processa as inscrições, normalmente `submit.php` e no formulário `inscricao.php`.
+
+## 5. Configuração do PagBank Checkout
+
+A forma de pagamento deve passar a ser o checkout PagBank.
+
+### Passo a passo detalhado
+
+1. Acesse o portal do PagBank Developers.
+2. Crie um aplicativo para checkout.
+3. Ative o ambiente de testes/sandbox.
+4. Gere o `client_id` e o `client_secret`.
+5. Configure a URL de retorno do pagamento e, se quiser, o webhook.
+6. No arquivo `config.php`, adicione as variáveis abaixo (ou ajuste conforme sua estrutura atual):
+
+```php
+$PAGBANK_ENV = 'sandbox';
+$PAGBANK_CLIENT_ID = 'SEU_CLIENT_ID';
+$PAGBANK_CLIENT_SECRET = 'SEU_CLIENT_SECRET';
+$PAGBANK_REDIRECT_URL = 'https://seu-dominio.com/payment_return.php';
+```
+
+7. Crie um endpoint para iniciar o checkout e fazer a chamada para:
+
+```text
+https://sandbox.api.pagseguro.com/checkout
+```
+
+8. No corpo da requisição, envie os dados do pedido, por exemplo:
+
+```json
+{
+  "reference_id": "inscricao-001",
+  "customer": {
+    "name": "Nome do participante",
+    "email": "participante@email.com"
+  },
+  "items": [
+    {
+      "reference_id": "inscricao",
+      "name": "Inscrição do evento",
+      "quantity": 1,
+      "unit_amount": 15000
+    }
+  ],
+  "amount": {
+    "value": 15000,
+    "currency": "BRL"
+  }
+}
+```
+
+9. O PagBank retornará um link ou um token de checkout. Use esse valor para redirecionar o usuário.
+10. Teste o fluxo inteiro em sandbox antes de publicar em produção.
+
+> Importante: a estrutura exata da API pode variar conforme a versão do endpoint e a sua conta no PagBank. Use as instruções oficiais do portal e valide o fluxo com cartões e CPF de teste.
+
+## 6. Alterações importantes
 
 ### config.php
 
 Se precisar alterar:
-- **PIX Phone**: `$PIX_PHONE = '11993813374';`
 - **Valor da inscrição**: `$PAYMENT_AMOUNT = 150.00;`
+- **Credenciais PagBank**: `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET`, `PAGBANK_REDIRECT_URL`
+- **Ambiente**: `$PAGBANK_ENV = 'sandbox';` ou `production`
 - **Credenciais admin**: `$ADMIN_USER = 'admin';` e `$ADMIN_PASS = 'SenhaAdmin@2026';`
 
 ### Estrutura de pastas do servidor

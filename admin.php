@@ -77,6 +77,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isAdminA
     exit;
 }
 
+$lookup_result = null;
+$lookup_error = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lookup_registration']) && isAdminAuthenticated()) {
+    $lookup_email = trim($_POST['lookup_email'] ?? '');
+    $lookup_phone = trim($_POST['lookup_phone'] ?? '');
+    $lookup_phone_digits = normalizePhoneForLookup($lookup_phone);
+
+    if ($lookup_email === '' && $lookup_phone_digits === '') {
+        $lookup_error = 'Informe o e-mail ou telefone para buscar.';
+    } else {
+        $search_tables = [
+            ['table' => 'peregrinos', 'label' => 'Peregrino'],
+            ['table' => 'anfitrioes', 'label' => 'Anfitrião'],
+        ];
+
+        foreach ($search_tables as $candidate) {
+            $table = $candidate['table'];
+            $query = "SELECT id, nome, email, telefone, payment_status, pagbank_checkout_id, pagbank_status, pagbank_payment_id, pagbank_payload FROM `$table` WHERE 1=1";
+            $params = [];
+            $types = '';
+
+            if ($lookup_email !== '') {
+                $query .= " AND email = ?";
+                $params[] = $lookup_email;
+                $types .= 's';
+            }
+
+            if ($lookup_phone_digits !== '') {
+                $query .= " AND REPLACE(REPLACE(REPLACE(telefone, '(', ''), ')', ''), '-', '') LIKE ?";
+                $params[] = '%' . $lookup_phone_digits . '%';
+                $types .= 's';
+            }
+
+            $stmt = $mysqli->prepare($query);
+            if (!$stmt) {
+                continue;
+            }
+
+            if ($params) {
+                $stmt->bind_param($types, ...$params);
+            }
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+
+            if ($row) {
+                $checkout_id = $row['pagbank_checkout_id'] ?? null;
+                $refresh = null;
+                if (!empty($checkout_id)) {
+                    $refresh = refreshPagbankRegistrationStatus($mysqli, $table, (int) $row['id'], $checkout_id);
+                }
+
+                $lookup_result = [
+                    'table' => $table,
+                    'label' => $candidate['label'],
+                    'row' => $row,
+                    'refresh' => $refresh,
+                ];
+                break;
+            }
+        }
+
+        if (!$lookup_result) {
+            $lookup_error = 'Nenhuma inscrição encontrada com esses dados.';
+        }
+    }
+}
+
 if (!isAdminAuthenticated()) {
     ?>
 <!DOCTYPE html>
@@ -245,6 +314,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_edition']) && is
         $local = trim($_POST['local'] ?? '');
         $data_inscricao_inicio = $_POST['data_inscricao_inicio'] ?? null;
         $data_inscricao_fim = $_POST['data_inscricao_fim'] ?? null;
+        $hora_inicio = trim((string)($_POST['hora_inicio'] ?? ''));
+        $hora_fim = trim((string)($_POST['hora_fim'] ?? ''));
+        $hora_inscricao_inicio = trim((string)($_POST['hora_inscricao_inicio'] ?? ''));
+        $hora_inscricao_fim = trim((string)($_POST['hora_inscricao_fim'] ?? ''));
         
         if (!$titulo) {
             throw new Exception("Título é obrigatório");
@@ -254,12 +327,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_edition']) && is
             throw new Exception("Edição não selecionada");
         }
         
-        $stmt = $mysqli->prepare("UPDATE edicoes SET titulo = ?, descricao = ?, data_inicio = ?, data_fim = ?, local = ?, data_inscricao_inicio = ?, data_inscricao_fim = ? WHERE id = ?");
+        $stmt = $mysqli->prepare("UPDATE edicoes SET titulo = ?, descricao = ?, data_inicio = ?, data_fim = ?, local = ?, data_inscricao_inicio = ?, data_inscricao_fim = ?, hora_inicio = NULLIF(?, ''), hora_fim = NULLIF(?, ''), hora_inscricao_inicio = NULLIF(?, ''), hora_inscricao_fim = NULLIF(?, '') WHERE id = ?");
         if (!$stmt) {
             throw new Exception("Erro ao preparar statement: " . $mysqli->error);
         }
         
-        $stmt->bind_param('sssssssi', $titulo, $descricao, $data_inicio, $data_fim, $local, $data_inscricao_inicio, $data_inscricao_fim, $edicao_id);
+        $stmt->bind_param('sssssssssssi', $titulo, $descricao, $data_inicio, $data_fim, $local, $data_inscricao_inicio, $data_inscricao_fim, $hora_inicio, $hora_fim, $hora_inscricao_inicio, $hora_inscricao_fim, $edicao_id);
         
         if (!$stmt->execute()) {
             throw new Exception("Erro ao executar update: " . $stmt->error);
@@ -566,6 +639,43 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
             <div class="container">
                 <h1 style="margin-bottom: 3rem; animation: fadeInUp 0.6s ease;">Dashboard Admin</h1>
 
+                <div class="glass-strong" style="padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
+                    <h3 style="margin-top: 0; color: var(--primary);">🔎 Buscar inscrição por e-mail ou telefone</h3>
+                    <form method="post" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: end;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>E-mail</label>
+                            <input type="email" name="lookup_email" placeholder="seu@email.com">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Telefone</label>
+                            <input type="tel" name="lookup_phone" placeholder="11999999999">
+                        </div>
+                        <div>
+                            <input type="hidden" name="lookup_registration" value="1">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Buscar</button>
+                        </div>
+                    </form>
+
+                    <?php if (!empty($lookup_error)): ?>
+                        <div style="margin-top: 1rem; padding: 0.9rem 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.14); color: #fecaca;">
+                            <?php echo htmlspecialchars($lookup_error, ENT_QUOTES, 'UTF-8'); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($lookup_result): ?>
+                        <?php $lookup_row = $lookup_result['row']; ?>
+                        <div style="margin-top: 1rem; padding: 1rem; border-radius: 12px; background: rgba(67, 56, 202, 0.08);">
+                            <p><strong>Tipo:</strong> <?php echo htmlspecialchars($lookup_result['label'], ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Nome:</strong> <?php echo htmlspecialchars($lookup_row['nome'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>E-mail:</strong> <?php echo htmlspecialchars($lookup_row['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Telefone:</strong> <?php echo htmlspecialchars($lookup_row['telefone'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Status no sistema:</strong> <?php echo htmlspecialchars(ucfirst($lookup_row['payment_status'] ?? 'pendente'), ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Status no PagBank:</strong> <?php echo htmlspecialchars($lookup_result['refresh']['pagbank_status'] ?? $lookup_row['pagbank_status'] ?? 'Não consultado', ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>ID do pagamento:</strong> <?php echo htmlspecialchars($lookup_result['refresh']['payment_id'] ?? $lookup_row['pagbank_payment_id'] ?? 'Não disponível', ENT_QUOTES, 'UTF-8'); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
                 <!-- ESTATÍSTICAS -->
                 <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 3rem;">
                     <div class="glass-strong stat-card" style="padding: 2rem; text-align: center; border-radius: 12px;">
@@ -673,12 +783,12 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
         <section class="section">
             <div class="container">
                 <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('cadastro')">➕ Cadastrar Integrante</button>
-                    <button class="tab-btn" onclick="switchTab('pendentes')">⏳ Pendentes de Confirmação</button>
-                    <button class="tab-btn" onclick="switchTab('peregrinos')">🧘 Peregrinos</button>
-                    <button class="tab-btn" onclick="switchTab('anfitrioes')">👥 Anfitriões</button>
-                    <button class="tab-btn" onclick="switchTab('edicoes')">📅 Edições</button>
-                    <button class="tab-btn" onclick="switchTab('admins')">🔐 Criar Usuario Admin</button>
+                    <button class="tab-btn active" onclick="switchTab('cadastro', this)">➕ Cadastro</button>
+                    <button class="tab-btn" onclick="switchTab('pendentes', this)">⏳ Pendentes</button>
+                    <button class="tab-btn" onclick="switchTab('peregrinos', this)">🧘 Peregrinos</button>
+                    <button class="tab-btn" onclick="switchTab('anfitrioes', this)">👥 Anfitriões</button>
+                    <button class="tab-btn" onclick="switchTab('edicoes', this)">📅 Edições</button>
+                    <button class="tab-btn" onclick="switchTab('admins', this)">🔐 Usuários</button>
                 </div>
 
                 <!-- TAB: CADASTRAR INTEGRANTE -->
@@ -948,7 +1058,7 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                                 <select name="edicao_id" id="edicaoSelect" required style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%; cursor: pointer; font-size: 1rem;" onchange="loadEditionData()">
                                     <option value="">-- Selecione uma edição --</option>
                                     <?php foreach ($editions_list as $ed): ?>
-                                    <option value="<?= $ed['id'] ?>" data-titulo="<?= htmlspecialchars($ed['titulo']) ?>" data-descricao="<?= htmlspecialchars($ed['descricao']) ?>" data-data_inicio="<?= $ed['data_inicio'] ?>" data-data_fim="<?= $ed['data_fim'] ?>" data-local="<?= htmlspecialchars($ed['local']) ?>" data-data_inscricao_inicio="<?= $ed['data_inscricao_inicio'] ?? '' ?>" data-data_inscricao_fim="<?= $ed['data_inscricao_fim'] ?? '' ?>">
+                                    <option value="<?= $ed['id'] ?>" data-titulo="<?= htmlspecialchars($ed['titulo']) ?>" data-descricao="<?= htmlspecialchars($ed['descricao']) ?>" data-data_inicio="<?= $ed['data_inicio'] ?>" data-data_fim="<?= $ed['data_fim'] ?>" data-local="<?= htmlspecialchars($ed['local']) ?>" data-data_inscricao_inicio="<?= $ed['data_inscricao_inicio'] ?? '' ?>" data-data_inscricao_fim="<?= $ed['data_inscricao_fim'] ?? '' ?>" data-hora_inicio="<?= htmlspecialchars((string)($ed['hora_inicio'] ?? '')) ?>" data-hora_fim="<?= htmlspecialchars((string)($ed['hora_fim'] ?? '')) ?>" data-hora_inscricao_inicio="<?= htmlspecialchars((string)($ed['hora_inscricao_inicio'] ?? '')) ?>" data-hora_inscricao_fim="<?= htmlspecialchars((string)($ed['hora_inscricao_fim'] ?? '')) ?>">
                                         <?= htmlspecialchars($ed['titulo']) ?> (<?= $ed['ano'] ?>)
                                     </option>
                                     <?php endforeach; ?>
@@ -984,6 +1094,18 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                                 </div>
                             </div>
 
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Hora de Início</label>
+                                    <input type="time" name="hora_inicio" id="hora_inicio" style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="display: block; color: var(--muted); margin-bottom: 0.5rem; font-weight: 600;">Hora de Término</label>
+                                    <input type="time" name="hora_fim" id="hora_fim" style="padding: 0.85rem; border-radius: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary); color: var(--text); width: 100%;">
+                                </div>
+                            </div>
+
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; background: linear-gradient(135deg, rgba(217, 70, 239, 0.1), rgba(168, 85, 247, 0.05)); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(217, 70, 239, 0.2);">
                                 <div class="form-group">
                                     <label style="display: block; color: #d946ef; margin-bottom: 0.5rem; font-weight: 600;">⏰ Data Início Inscrições</label>
@@ -993,6 +1115,18 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                                 <div class="form-group">
                                     <label style="display: block; color: #d946ef; margin-bottom: 0.5rem; font-weight: 600;">⏰ Data Término Inscrições</label>
                                     <input type="date" name="data_inscricao_fim" id="data_inscricao_fim" style="padding: 0.85rem; border-radius: 8px; background: rgba(217, 70, 239, 0.15); border: 1px solid #d946ef; color: var(--text); width: 100%;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label style="display: block; color: #d946ef; margin-bottom: 0.5rem; font-weight: 600;">⏰ Hora Início Inscrições</label>
+                                    <input type="time" name="hora_inscricao_inicio" id="hora_inscricao_inicio" style="padding: 0.85rem; border-radius: 8px; background: rgba(217, 70, 239, 0.15); border: 1px solid #d946ef; color: var(--text); width: 100%;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="display: block; color: #d946ef; margin-bottom: 0.5rem; font-weight: 600;">⏰ Hora Término Inscrições</label>
+                                    <input type="time" name="hora_inscricao_fim" id="hora_inscricao_fim" style="padding: 0.85rem; border-radius: 8px; background: rgba(217, 70, 239, 0.15); border: 1px solid #d946ef; color: var(--text); width: 100%;">
                                 </div>
                             </div>
 
@@ -1104,19 +1238,21 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
             });
         });
         
-        function switchTab(tabName) {
-            // Hide all tabs
+        function switchTab(tabName, button) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            // Remove active from all buttons
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            // Show selected tab
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            const targetTab = document.getElementById(tabName);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+            if (button) {
+                button.classList.add('active');
+            }
         }
 
         function loadEditionData() {
@@ -1131,6 +1267,10 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
                 document.getElementById('local').value = option.getAttribute('data-local') || '';
                 document.getElementById('data_inscricao_inicio').value = option.getAttribute('data-data_inscricao_inicio') || '';
                 document.getElementById('data_inscricao_fim').value = option.getAttribute('data-data_inscricao_fim') || '';
+                document.getElementById('hora_inicio').value = option.getAttribute('data-hora_inicio') || '';
+                document.getElementById('hora_fim').value = option.getAttribute('data-hora_fim') || '';
+                document.getElementById('hora_inscricao_inicio').value = option.getAttribute('data-hora_inscricao_inicio') || '';
+                document.getElementById('hora_inscricao_fim').value = option.getAttribute('data-hora_inscricao_fim') || '';
             } else {
                 resetForm();
             }
@@ -1144,6 +1284,10 @@ $total_arrecadado = ($row1['total'] ?? 0) + ($row2['total'] ?? 0);
             document.getElementById('local').value = '';
             document.getElementById('data_inscricao_inicio').value = '';
             document.getElementById('data_inscricao_fim').value = '';
+            document.getElementById('hora_inicio').value = '';
+            document.getElementById('hora_fim').value = '';
+            document.getElementById('hora_inscricao_inicio').value = '';
+            document.getElementById('hora_inscricao_fim').value = '';
         }
     </script>
 </body>

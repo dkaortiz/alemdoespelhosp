@@ -11,11 +11,16 @@ $form_type = $_POST['form_type'] ?? null;
 $nome = trim($_POST['nome'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $telefone = trim($_POST['telefone'] ?? '');
+$endereco = trim($_POST['endereco'] ?? '');
 $whatsapp = trim($_POST['whatsapp'] ?? '');
-$payment_method = $_POST['payment_method'] ?? '';
+$problema_saude = $_POST['problema_saude'] ?? 'nao';
+$problema_saude_descricao = trim($_POST['problema_saude_descricao'] ?? '');
+$usa_remedio = $_POST['usa_remedio'] ?? 'nao';
+$remedio_descricao = trim($_POST['remedio_descricao'] ?? '');
+$payment_method = 'pagbank';
 
 // Validação básica
-if (empty($nome) || empty($email) || empty($payment_method)) {
+if (empty($nome) || empty($email) || empty($telefone) || empty($endereco) || empty($problema_saude) || empty($usa_remedio)) {
     header('Location: inscricao.php?error=Dados%20incompletos');
     exit;
 }
@@ -83,27 +88,31 @@ if ($form_type === 'peregrino') {
 
     $stmt = $mysqli->prepare("
         INSERT INTO peregrinos 
-        (nome, email, telefone, whatsapp, genero, categoria, payment_method, payment_status, payment_amount, valor, criado_em)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (nome, email, telefone, endereco, whatsapp, genero, categoria, problema_saude, problema_saude_descricao, usa_remedio, remedio_descricao, payment_method, payment_status, payment_amount, valor, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
-    $stmt->bind_param('sssssssssds', $nome, $email, $telefone, $whatsapp, $genero, $categoria, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em);
+    if (!$stmt) {
+        header('Location: inscricao.php?error=Erro%20ao%20salvar%20inscrição');
+        exit;
+    }
+
+    $types = str_repeat('s', 13) . 'dds';
+    $stmt->bind_param($types, $nome, $email, $telefone, $endereco, $whatsapp, $genero, $categoria, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em);
     $stmt->execute();
     $id = $mysqli->insert_id;
     $stmt->close();
 
-    // Calcular centavos PIX
-    $pix_cents = calculatePixCents($id);
-    $pix_amount = calculatePixAmount($id);
-
-    // Atualizar com centavos
-    $stmt = $mysqli->prepare("UPDATE peregrinos SET pix_cents = ?, payment_amount = ? WHERE id = ?");
-    $stmt->bind_param('idi', $pix_cents, $pix_amount, $id);
-    $stmt->execute();
-    $stmt->close();
+    // Calcular valor e criar checkout PagBank
+    $amountCents = (int) round($payment_amount * 100);
+    $checkoutResult = createPagbankCheckout($id, 'peregrino', $nome, $email, $amountCents);
+    if ($checkoutResult['success'] && !empty($checkoutResult['checkout_url'])) {
+        savePagbankCheckoutData($mysqli, 'peregrinos', $id, $checkoutResult);
+    }
 
     $_SESSION['registration_id'] = $id;
     $_SESSION['registration_type'] = 'peregrino';
-    $_SESSION['pix_amount'] = $pix_amount;
+    $_SESSION['pagbank_checkout_url'] = $checkoutResult['checkout_url'] ?? null;
+    $_SESSION['pagbank_reference_id'] = $checkoutResult['reference_id'] ?? null;
 
     header('Location: payment.php');
     exit;
@@ -136,27 +145,31 @@ if ($form_type === 'peregrino') {
 
     $stmt = $mysqli->prepare("
         INSERT INTO anfitrioes 
-        (nome, email, telefone, whatsapp, funcao, peregrino_anterior, payment_method, payment_status, payment_amount, valor, criado_em)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (nome, email, telefone, endereco, whatsapp, funcao, peregrino_anterior, problema_saude, problema_saude_descricao, usa_remedio, remedio_descricao, payment_method, payment_status, payment_amount, valor, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
-    $stmt->bind_param('sssssissdssd', $nome, $email, $telefone, $whatsapp, $funcao, $foi_peregrino, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em);
+    if (!$stmt) {
+        header('Location: inscricao.php?error=Erro%20ao%20salvar%20inscrição');
+        exit;
+    }
+
+    $types = str_repeat('s', 6) . 'i' . str_repeat('s', 6) . 'dds';
+    $stmt->bind_param($types, $nome, $email, $telefone, $endereco, $whatsapp, $funcao, $foi_peregrino, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em);
     $stmt->execute();
     $id = $mysqli->insert_id;
     $stmt->close();
 
-    // Calcular centavos PIX
-    $pix_cents = calculatePixCents($id);
-    $pix_amount = calculatePixAmount($id);
-
-    // Atualizar com centavos
-    $stmt = $mysqli->prepare("UPDATE anfitrioes SET pix_cents = ?, payment_amount = ? WHERE id = ?");
-    $stmt->bind_param('idi', $pix_cents, $pix_amount, $id);
-    $stmt->execute();
-    $stmt->close();
+    // Calcular valor e criar checkout PagBank
+    $amountCents = (int) round($payment_amount * 100);
+    $checkoutResult = createPagbankCheckout($id, 'anfitriao', $nome, $email, $amountCents);
+    if ($checkoutResult['success'] && !empty($checkoutResult['checkout_url'])) {
+        savePagbankCheckoutData($mysqli, 'anfitrioes', $id, $checkoutResult);
+    }
 
     $_SESSION['registration_id'] = $id;
     $_SESSION['registration_type'] = 'anfitriao';
-    $_SESSION['pix_amount'] = $pix_amount;
+    $_SESSION['pagbank_checkout_url'] = $checkoutResult['checkout_url'] ?? null;
+    $_SESSION['pagbank_reference_id'] = $checkoutResult['reference_id'] ?? null;
 
     if ($foi_peregrino) {
         header('Location: payment.php');

@@ -61,7 +61,8 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
             font-weight: 500;
         }
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 0.85rem 1rem;
             border-radius: 12px;
@@ -70,8 +71,13 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
             color: var(--text);
             font-size: 1rem;
         }
+        .form-group textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
         .form-group input:focus,
-        .form-group select:focus {
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
             background: rgba(67, 56, 202, 0.1);
@@ -223,6 +229,7 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                     <a href="edicoes.php">Edições</a>
                     <a href="inscricao.php">Inscrição</a>
                     <a href="regras.php">Regras</a>
+                    <a href="user_login.php">Login</a>
                     <a href="admin.php">Admin</a>
                 </div>
             </div>
@@ -232,6 +239,7 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
             <a href="edicoes.php">Edições</a>
             <a href="inscricao.php">Inscrição</a>
             <a href="regras.php">Regras</a>
+            <a href="user_login.php">Login</a>
             <a href="admin.php">Admin</a>
         </div>
     </header>
@@ -248,7 +256,7 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
 
                 <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1000px; margin: 3rem auto;">
                     <!-- PEREGRINO -->
-                    <div onclick="openInscriptionModal('peregrino')" style="text-decoration: none; cursor: pointer;">
+                    <a href="inscricao.php?type=peregrino" style="text-decoration: none; display: block;">
                         <div class="glass-strong choice-card" style="padding: 3rem; text-align: center; border: 2px solid transparent; transition: all 0.3s ease; animation: fadeInUp 0.6s ease;">
                             <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));">🧘</div>
                             <h2 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 1rem;">Peregrino</h2>
@@ -262,10 +270,10 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                                 <li>✓ R$ 150,00</li>
                             </ul>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- ANFITRIÃO -->
-                    <div onclick="openInscriptionModal('anfitriao')" style="text-decoration: none; cursor: pointer;">
+                    <a href="inscricao.php?type=anfitriao" style="text-decoration: none; display: block;">
                         <div class="glass-strong choice-card" style="padding: 3rem; text-align: center; border: 2px solid transparent; transition: all 0.3s ease; animation: fadeInUp 0.6s ease 0.15s both;">
                             <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.5));">👥</div>
                             <h2 style="color: var(--accent-secondary); font-size: 1.8rem; margin-bottom: 1rem;">Anfitrião</h2>
@@ -279,7 +287,7 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                                 <li>✓ <strong style="color: var(--accent-secondary);">R$ 100,00</strong></li>
                             </ul>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </section>
@@ -331,17 +339,49 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         </div>
 
                         <div class="form-group">
+                            <label>Endereço Completo *</label>
+                            <input type="text" name="endereco" placeholder="Rua, número, bairro, cidade" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tem algum problema de saúde? *</label>
+                            <select name="problema_saude" required>
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Se sim, quais problemas?</label>
+                            <textarea name="problema_saude_descricao" placeholder="Descreva os problemas de saúde"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Usa algum remédio? *</label>
+                            <select name="usa_remedio" required>
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Se sim, qual remédio e em que horários?</label>
+                            <textarea name="remedio_descricao" placeholder="Ex.: Dipirona, 8h e 20h"></textarea>
+                        </div>
+
+                        <div class="form-group">
                             <label>WhatsApp</label>
                             <input type="tel" name="whatsapp" placeholder="DDD + número">
                         </div>
 
                         <div class="form-group">
-                            <label>Forma de Pagamento *</label>
-                            <select name="payment_method" required>
-                                <option value="">Selecione</option>
-                                <option value="pix">PIX</option>
-                                <option value="cartao">Cartão de Crédito</option>
-                            </select>
+                            <label>Forma de pagamento</label>
+                            <div style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(67, 56, 202, 0.08); border: 1px solid rgba(67, 56, 202, 0.2); color: var(--text);">
+                                Checkout PagBank
+                            </div>
+                            <input type="hidden" name="payment_method" value="pagbank">
                         </div>
 
                         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
@@ -390,6 +430,39 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         </div>
 
                         <div class="form-group">
+                            <label>Endereço Completo *</label>
+                            <input type="text" name="endereco" placeholder="Rua, número, bairro, cidade" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tem algum problema de saúde? *</label>
+                            <select name="problema_saude" required>
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Se sim, quais problemas?</label>
+                            <textarea name="problema_saude_descricao" placeholder="Descreva os problemas de saúde"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Usa algum remédio? *</label>
+                            <select name="usa_remedio" required>
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Se sim, qual remédio e em que horários?</label>
+                            <textarea name="remedio_descricao" placeholder="Ex.: Dipirona, 8h e 20h"></textarea>
+                        </div>
+
+                        <div class="form-group">
                             <label>WhatsApp</label>
                             <input type="tel" name="whatsapp" placeholder="DDD + número">
                         </div>
@@ -402,12 +475,11 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         </div>
 
                         <div class="form-group">
-                            <label>Forma de Pagamento *</label>
-                            <select name="payment_method" required>
-                                <option value="">Selecione</option>
-                                <option value="pix">PIX</option>
-                                <option value="cartao">Cartão de Crédito</option>
-                            </select>
+                            <label>Forma de pagamento</label>
+                            <div style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(67, 56, 202, 0.08); border: 1px solid rgba(67, 56, 202, 0.2); color: var(--text);">
+                                Checkout PagBank
+                            </div>
+                            <input type="hidden" name="payment_method" value="pagbank">
                         </div>
 
                         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
@@ -423,31 +495,6 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
         </section>
         <?php endif; ?>
     </main>
-
-    <!-- MODAL DE INSCRIÇÃO EM MANUTENÇÃO -->
-    <div id="inscriptionModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-icon">🔧</div>
-            <h2 class="modal-title">Sistema em Implementação</h2>
-            <p class="modal-text">
-                Estamos preparando nosso sistema de inscrições com as melhores práticas de segurança e qualidade.
-            </p>
-            <div class="modal-highlight">
-                ⏳ Sistema de pagamento sendo implementado. Retornaremos em breve!
-            </div>
-            <p class="modal-text">
-                Para mais informações e dúvidas sobre inscrição, entre em contato conosco pelo WhatsApp:
-            </p>
-            <div class="modal-cta">
-                <a href="https://wa.me/5511993813374?text=Olá!%20Gostaria%20de%20informações%20sobre%20inscrição%20no%20evento%20O%20Confronto" target="_blank" class="modal-btn modal-btn-whats">
-                    📱 Fale Conosco no WhatsApp
-                </a>
-                <button onclick="closeInscriptionModal()" class="modal-btn modal-btn-close">
-                    ✕ Fechar
-                </button>
-            </div>
-        </div>
-    </div>
 
     <footer class="site-footer">
         <div class="container">
@@ -472,27 +519,7 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
             });
         });
         
-        function openInscriptionModal(type) {
-            document.getElementById('inscriptionModal').classList.add('active');
-        }
-        
-        function closeInscriptionModal() {
-            document.getElementById('inscriptionModal').classList.remove('active');
-        }
-        
-        // Fechar modal ao clicar fora
-        document.getElementById('inscriptionModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeInscriptionModal();
-            }
-        });
-        
-        // Fechar modal com tecla ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeInscriptionModal();
-            }
-        });
+
     </script>
 </body>
 </html>

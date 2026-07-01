@@ -1,4 +1,7 @@
-<?php declare(strict_types=1); ?>
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/config.php';
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -72,6 +75,7 @@
                     <a href="edicoes.php">Edições</a>
                     <a href="inscricao.php">Inscrição</a>
                     <a href="regras.php">Regras</a>
+                    <a href="user_login.php">Login</a>
                     <a href="admin.php">Admin</a>
                 </div>
             </div>
@@ -81,6 +85,7 @@
             <a href="edicoes.php">Edições</a>
             <a href="inscricao.php">Inscrição</a>
             <a href="regras.php">Regras</a>
+            <a href="user_login.php">Login</a>
             <a href="admin.php">Admin</a>
         </div>
     </header>

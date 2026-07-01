@@ -27,6 +27,13 @@ $PIX_PHONE = '11993813374';
 $PAYMENT_BASE = 150.00;
 $PAYMENT_AMOUNT = 150.00;
 
+// Configuração PagBank Checkout
+$PAGBANK_ENV = 'sandbox';
+$PAGBANK_ACCESS_TOKEN = '8c38f454-2f01-4ba4-8f04-6c9bae46accedef94ae6437b95f15c34763044923665cde7-985a-4345-aab5-ea543269cf67';
+$PAGBANK_REDIRECT_URL = 'https://alemdoespelhosp.com.br/payment_return.php';
+$PAGBANK_WEBHOOK_URL = 'https://alemdoespelhosp.com.br/pagbank_webhook.php';
+$PAGBANK_DEFAULT_EMAIL = 'dkaortiz@gmail.com';
+
 // Configuração admin: autenticação exclusivamente via tabela `admins`
 
 // Diretório de uploads
@@ -41,6 +48,281 @@ if ($mysqli->connect_errno) {
     die('Falha ao conectar ao banco de dados: ' . $mysqli->connect_error);
 }
 $mysqli->set_charset('utf8mb4');
+
+function ensureRegistrationSchema($mysqli) {
+    $tables = [
+        'edicoes' => [
+            ['hora_inicio', 'TIME NULL'],
+            ['hora_fim', 'TIME NULL'],
+            ['hora_inscricao_inicio', 'TIME NULL'],
+            ['hora_inscricao_fim', 'TIME NULL'],
+        ],
+        'peregrinos' => [
+            ['endereco', 'VARCHAR(255) NULL'],
+            ['problema_saude', 'VARCHAR(10) NULL'],
+            ['problema_saude_descricao', 'TEXT NULL'],
+            ['usa_remedio', 'VARCHAR(10) NULL'],
+            ['remedio_descricao', 'TEXT NULL'],
+            ['pagbank_reference_id', 'VARCHAR(100) NULL'],
+            ['pagbank_checkout_id', 'VARCHAR(100) NULL'],
+            ['pagbank_status', 'VARCHAR(50) NULL'],
+            ['pagbank_last_event', 'VARCHAR(100) NULL'],
+            ['pagbank_payment_id', 'VARCHAR(100) NULL'],
+            ['pagbank_payload', 'TEXT NULL'],
+        ],
+        'anfitrioes' => [
+            ['endereco', 'VARCHAR(255) NULL'],
+            ['problema_saude', 'VARCHAR(10) NULL'],
+            ['problema_saude_descricao', 'TEXT NULL'],
+            ['usa_remedio', 'VARCHAR(10) NULL'],
+            ['remedio_descricao', 'TEXT NULL'],
+            ['pagbank_reference_id', 'VARCHAR(100) NULL'],
+            ['pagbank_checkout_id', 'VARCHAR(100) NULL'],
+            ['pagbank_status', 'VARCHAR(50) NULL'],
+            ['pagbank_last_event', 'VARCHAR(100) NULL'],
+            ['pagbank_payment_id', 'VARCHAR(100) NULL'],
+            ['pagbank_payload', 'TEXT NULL'],
+        ],
+    ];
+
+    foreach ($tables as $table => $columns) {
+        foreach ($columns as [$column, $definition]) {
+            $check = $mysqli->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+            if ($check && $check->num_rows === 0) {
+                $mysqli->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+            }
+        }
+    }
+
+    $mysqli->query("ALTER TABLE `peregrinos` MODIFY `payment_method` ENUM('pix','cartao','pagbank') NOT NULL DEFAULT 'pagbank'");
+    $mysqli->query("ALTER TABLE `anfitrioes` MODIFY `payment_method` ENUM('pix','cartao','pagbank') NOT NULL DEFAULT 'pagbank'");
+}
+
+ensureRegistrationSchema($mysqli);
+
+function getPagbankApiBaseUrl() {
+    global $PAGBANK_ENV;
+    return $PAGBANK_ENV === 'production' ? 'https://api.pagseguro.com' : 'https://sandbox.api.pagseguro.com';
+}
+
+function pagbankApiRequest($path, $payload = null, $method = 'POST') {
+    global $PAGBANK_ACCESS_TOKEN;
+
+    $token = trim((string) $PAGBANK_ACCESS_TOKEN);
+    if ($token === '') {
+        return ['ok' => false, 'message' => 'Token do PagBank não configurado.'];
+    }
+
+    $authorizationHeader = stripos($token, 'Bearer ') === 0 ? $token : 'Bearer ' . $token;
+
+    $url = getPagbankApiBaseUrl() . $path;
+    $headers = [
+        'Authorization: ' . $authorizationHeader,
+        'Content-Type: application/json',
+        'Accept: application/json',
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+
+    if ($payload !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    }
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        return ['ok' => false, 'message' => $error];
+    }
+
+    $decoded = json_decode($response, true);
+    if ($httpCode === 401 || $httpCode === 403) {
+        return [
+            'ok' => false,
+            'message' => 'Credencial inválida do PagBank. Gere um novo access token via Connect e confirme se o header Authorization está no formato Bearer <token>.',
+            'http_code' => $httpCode,
+            'body' => $decoded,
+            'raw' => $response,
+        ];
+    }
+
+    return [
+        'ok' => $httpCode >= 200 && $httpCode < 300,
+        'http_code' => $httpCode,
+        'body' => $decoded,
+        'raw' => $response,
+    ];
+}
+
+function createPagbankCheckout($registrationId, $registrationType, $customerName, $customerEmail, $amountCents, $redirectUrl = null, $webhookUrl = null) {
+    global $PAGBANK_REDIRECT_URL, $PAGBANK_WEBHOOK_URL, $PAGBANK_DEFAULT_EMAIL;
+
+    $referenceId = 'inscricao-' . $registrationType . '-' . $registrationId;
+    $payload = [
+        'reference_id' => $referenceId,
+        'customer' => [
+            'name' => $customerName,
+            'email' => !empty($customerEmail) ? $customerEmail : $PAGBANK_DEFAULT_EMAIL,
+        ],
+        'items' => [[
+            'reference_id' => $referenceId,
+            'name' => 'Inscrição ' . ucfirst($registrationType),
+            'quantity' => 1,
+            'unit_amount' => $amountCents,
+        ]],
+        'amount' => [
+            'value' => $amountCents,
+            'currency' => 'BRL',
+        ],
+        'redirect_url' => $redirectUrl ?: $PAGBANK_REDIRECT_URL,
+        'return_url' => $redirectUrl ?: $PAGBANK_REDIRECT_URL,
+        'notification_urls' => array_filter([$webhookUrl ?: $PAGBANK_WEBHOOK_URL]),
+    ];
+
+    $result = pagbankApiRequest('/checkouts', $payload, 'POST');
+    if (!$result['ok']) {
+        return ['success' => false, 'message' => $result['message'] ?? 'Erro ao criar checkout'];
+    }
+
+    $body = $result['body'] ?? [];
+    $checkoutUrl = null;
+
+    if (!empty($body['links'])) {
+        foreach ($body['links'] as $link) {
+            if (($link['rel'] ?? '') === 'PAY' || ($link['rel'] ?? '') === 'SELF') {
+                $checkoutUrl = $link['href'];
+                break;
+            }
+        }
+    }
+
+    if (empty($checkoutUrl) && !empty($body['checkout_url'])) {
+        $checkoutUrl = $body['checkout_url'];
+    }
+
+    return [
+        'success' => true,
+        'checkout_id' => $body['id'] ?? null,
+        'reference_id' => $referenceId,
+        'checkout_url' => $checkoutUrl,
+        'body' => $body,
+    ];
+}
+
+function savePagbankCheckoutData($mysqli, $table, $id, $checkoutData) {
+    if (empty($checkoutData['checkout_id']) && empty($checkoutData['reference_id']) && empty($checkoutData['checkout_url'])) {
+        return false;
+    }
+
+    $stmt = $mysqli->prepare("UPDATE `$table` SET pagbank_reference_id = ?, pagbank_checkout_id = ?, pagbank_status = ?, pagbank_payload = ? WHERE id = ?");
+    if (!$stmt) {
+        return false;
+    }
+
+    $payload = json_encode($checkoutData['body'] ?? []);
+    $status = $checkoutData['success'] ? 'created' : 'error';
+    $stmt->bind_param('ssssi', $checkoutData['reference_id'], $checkoutData['checkout_id'], $status, $payload, $id);
+    $ok = $stmt->execute();
+    $stmt->close();
+    return $ok;
+}
+
+function updateRegistrationPaymentStatus($mysqli, $table, $id, $status, $event = null, $paymentId = null, $payload = null) {
+    $stmt = $mysqli->prepare("UPDATE `$table` SET payment_status = ?, pagbank_status = ?, pagbank_last_event = ?, pagbank_payment_id = ?, pagbank_payload = ? WHERE id = ?");
+    if (!$stmt) {
+        return false;
+    }
+
+    $payloadJson = is_array($payload) ? json_encode($payload) : $payload;
+    $stmt->bind_param('sssssi', $status, $status, $event, $paymentId, $payloadJson, $id);
+    $ok = $stmt->execute();
+    $stmt->close();
+    return $ok;
+}
+
+function normalizePhoneForLookup($value) {
+    return preg_replace('/\D+/', '', (string) $value);
+}
+
+function extractPagbankCheckoutUrl($body) {
+    if (!is_array($body)) {
+        return null;
+    }
+
+    if (!empty($body['links']) && is_array($body['links'])) {
+        foreach ($body['links'] as $link) {
+            if (is_array($link) && in_array(($link['rel'] ?? ''), ['PAY', 'SELF', 'CHECKOUT'], true)) {
+                return $link['href'] ?? null;
+            }
+        }
+    }
+
+    if (!empty($body['checkout_url'])) {
+        return $body['checkout_url'];
+    }
+
+    if (!empty($body['payment_url'])) {
+        return $body['payment_url'];
+    }
+
+    return null;
+}
+
+function mapPagbankStatusToRegistrationStatus($body) {
+    $rawStatus = '';
+    if (is_array($body)) {
+        $rawStatus = (string) ($body['status'] ?? $body['payment_status'] ?? $body['payment_response']['status'] ?? '');
+    }
+
+    $status = strtolower($rawStatus);
+    if (in_array($status, ['paid', 'approved', 'authorized', 'confirmed', 'settled', 'success', 'succeeded'], true)) {
+        return 'confirmado';
+    }
+
+    if (in_array($status, ['canceled', 'cancelled', 'expired', 'failed', 'declined', 'rejected'], true)) {
+        return 'cancelado';
+    }
+
+    return 'pendente';
+}
+
+function refreshPagbankRegistrationStatus($mysqli, $table, $id, $checkoutId = null) {
+    if (empty($checkoutId)) {
+        return ['ok' => false, 'message' => 'Checkout do PagBank não encontrado.'];
+    }
+
+    $result = pagbankApiRequest('/checkouts/' . rawurlencode($checkoutId), null, 'GET');
+    if (!$result['ok']) {
+        return [
+            'ok' => false,
+            'message' => $result['message'] ?? 'Não foi possível consultar o status no PagBank.',
+            'http_code' => $result['http_code'] ?? null,
+        ];
+    }
+
+    $body = $result['body'] ?? [];
+    $pagbankStatus = $body['status'] ?? $body['payment_status'] ?? null;
+    $paymentId = $body['payment_response']['id'] ?? $body['payment_id'] ?? null;
+    $mappedStatus = mapPagbankStatusToRegistrationStatus($body);
+    $checkoutUrl = extractPagbankCheckoutUrl($body);
+
+    updateRegistrationPaymentStatus($mysqli, $table, $id, $mappedStatus, $pagbankStatus, $paymentId, $body);
+
+    return [
+        'ok' => true,
+        'status' => $mappedStatus,
+        'pagbank_status' => $pagbankStatus,
+        'payment_id' => $paymentId,
+        'checkout_url' => $checkoutUrl,
+        'body' => $body,
+    ];
+}
 
 // === Função de versioning para assets (CSS/JS) ===
 function assetVersion($file) {

@@ -13,6 +13,12 @@ Siga este checklist antes de fazer upload para a hospedagem Locaweb.
 
 ## ✅ Banco de dados
 
+### Campos novos do formulário
+
+- [ ] Adicionar campos para endereço, problema de saúde e remédios no formulário de inscrição
+- [ ] Confirmar que o backend salva esses dados na tabela correspondente
+- [ ] Validar o fluxo para `Anfitrião` e `Peregrino`
+
 ### Antes de fazer upload
 
 - [ ] Acessar PhpMyAdmin da Locaweb
@@ -28,6 +34,16 @@ Usuário: alemdoespelho
 Senha: IPM@1347New
 Banco: site
 ```
+
+## ✅ PagBank Checkout
+
+- [ ] Criar app no portal do PagBank
+- [ ] Habilitar ambiente `sandbox`
+- [ ] Gerar `client_id` e `client_secret`
+- [ ] Configurar URL de retorno e webhook
+- [ ] Inserir credenciais no `config.php`
+- [ ] Validar um pagamento de teste no checkout PagBank
+- [ ] Trocar para `production` somente após testes aprovados
 
 ## ✅ Upload SFTP
 
@@ -78,14 +94,15 @@ uploads/  (pasta)
 ### Testar fluxo completo
 
 1. [ ] Abrir https://alemdoespelhosp.com.br/
-2. [ ] Preencher inscrição (equipante ou acampante)
-3. [ ] Submeter formulário
-4. [ ] Verificar se redireciona para payment.php
-5. [ ] Verificar QR code PIX aparece corretamente
-6. [ ] Verificar se pode fazer upload de comprovante
-7. [ ] Acessar admin.php (usuário: `admin`, senha: `SenhaAdmin@2026`)
-8. [ ] Verificar se inscrição aparece na tabela
-9. [ ] Clicar em "Confirmar" ou "Rejeitar" e verificar se status muda
+2. [ ] Escolher inscrição de `Anfitrião` ou `Peregrino`
+3. [ ] Preencher nome, telefone, endereço e dados de saúde/remédios
+4. [ ] Submeter formulário
+5. [ ] Verificar se o fluxo redireciona para o checkout PagBank
+6. [ ] Validar a transação de teste no ambiente sandbox
+7. [ ] Verificar retorno e atualização do status da inscrição
+8. [ ] Acessar admin.php (usuário: `admin`, senha: `SenhaAdmin@2026`)
+9. [ ] Verificar se inscrição aparece na tabela
+10. [ ] Clicar em "Confirmar" ou "Rejeitar" e verificar se status muda
 
 ## ✅ Permissões no servidor
 

@@ -37,6 +37,7 @@ $currentEdition = $editions[0] ?? null;
                     <a href="edicoes.php">Edições</a>
                     <a href="inscricao.php">Inscrição</a>
                     <a href="regras.php">Regras</a>
+                    <a href="user_login.php">Login</a>
                     <a href="admin.php">Admin</a>
                 </div>
             </div>
@@ -46,6 +47,7 @@ $currentEdition = $editions[0] ?? null;
             <a href="edicoes.php">Edições</a>
             <a href="inscricao.php">Inscrição</a>
             <a href="regras.php">Regras</a>
+            <a href="user_login.php">Login</a>
             <a href="admin.php">Admin</a>
         </div>
     </header>

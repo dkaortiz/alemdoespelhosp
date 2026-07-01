@@ -203,6 +203,7 @@ $pending_admin = isset($_GET['pending_admin']);
                     <a href="edicoes.php">Edições</a>
                     <a href="inscricao.php">Inscrição</a>
                     <a href="regras.php">Regras</a>
+                    <a href="user_login.php">Login</a>
                 </div>
             </div>
         </nav>
@@ -211,6 +212,7 @@ $pending_admin = isset($_GET['pending_admin']);
             <a href="edicoes.php">Edições</a>
             <a href="inscricao.php">Inscrição</a>
             <a href="regras.php">Regras</a>
+            <a href="user_login.php">Login</a>
         </div>
     </header>
 

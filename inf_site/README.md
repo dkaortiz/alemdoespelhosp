@@ -5,9 +5,10 @@ Site em PHP para inscrição, pagamento e administração do evento **Além do E
 ## Características
 
 - **Home**: Apresentação do evento e inscrições
-- **Inscrições**: Separado em `Anfitrião` (sem limite) e `Peregrino` (15 homens + 15 mulheres)
-- **Pagamento**: Via PIX (QR code) ou cartão de crédito
-- **Comprovantes**: Upload de comprovante após inscrição
+- **Inscrições**: Separado em `Anfitrião` e `Peregrino`
+- **Cadastro**: Coleta nome, telefone, endereço, problemas de saúde (sim/não + detalhes), remédios (sim/não + qual e horários)
+- **Pagamento**: Checkout PagBank (substituindo o fluxo antigo de PIX/Cartão)
+- **Comprovantes**: Upload de comprovante após inscrição, quando necessário
 - **Painel Admin**: Gerenciamento de pagamentos e confirmações
 - **Regras**: Página dedicada com políticas do evento
 - **Responsive**: Funciona em mobile, tablet e desktop
@@ -43,7 +44,10 @@ Veja [INSTALACAO.md](INSTALACAO.md) para instruções detalhadas:
 1. Configurar banco de dados
 2. Upload via SFTP/FTP
 3. Acessar o site
-4. Solução de problemas
+4. Configurar o fluxo de cadastro e pagamento PagBank
+5. Solução de problemas
+
+Para a integração do checkout PagBank, consulte também [PAGBANK.md](PAGBANK.md).
 
 ## Arquivos de produção
 
@@ -75,13 +79,14 @@ Estes arquivos devem estar na raiz `/home/alemdoespelhosp1/` da hospedagem:
 
 ## Fluxo de pagamento
 
-1. Usuário se inscreve em `index.php`
-2. Sistema salva inscrição no banco
-3. Redireciona para `payment.php` com ID da inscrição
-4. Usuário vê QR code PIX (para `11993813374`) ou cartão
-5. Envia comprovante em `payment_confirm.php`
-6. Admin revisa em `admin.php` e confirma/rejeita
-7. Status muda para "confirmado" ou "cancelado"
+1. Usuário escolhe o tipo de inscrição: `Anfitrião` ou `Peregrino`
+2. Preenche o formulário com nome, telefone, endereço e informações de saúde/remédios
+3. Sistema salva a inscrição no banco
+4. O usuário é encaminhado para o checkout PagBank
+5. O pagamento é processado no ambiente PagBank (sandbox ou produção)
+6. O retorno do pagamento atualiza o status da inscrição
+7. O admin revisa em `admin.php` e confirma/rejeita
+8. Status muda para "confirmado" ou "cancelado"
 
 ## Valores
 
