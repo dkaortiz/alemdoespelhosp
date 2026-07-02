@@ -16,6 +16,38 @@ if (!session_id()) {
     @session_save_path($session_dir);
 }
 
+function loadEnvFile($path) {
+    if (!is_file($path)) {
+        return;
+    }
+
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+
+        $parts = explode('=', $line, 2);
+        if (count($parts) !== 2) {
+            continue;
+        }
+
+        [$name, $value] = array_map('trim', $parts);
+        if ($name === '' || getenv($name) !== false) {
+            continue;
+        }
+
+        putenv($name . '=' . $value);
+    }
+}
+
+loadEnvFile(__DIR__ . '/.env');
+
 // Configuração do banco de dados
 $DB_HOST = 'alemdoespelho.mysql.dbaas.com.br';
 $DB_USER = 'alemdoespelho';
@@ -28,11 +60,11 @@ $PAYMENT_BASE = 150.00;
 $PAYMENT_AMOUNT = 150.00;
 
 // Configuração PagBank Checkout
-$PAGBANK_ENV = 'sandbox';
-$PAGBANK_ACCESS_TOKEN = '8c38f454-2f01-4ba4-8f04-6c9bae46accedef94ae6437b95f15c34763044923665cde7-985a-4345-aab5-ea543269cf67';
-$PAGBANK_REDIRECT_URL = 'https://alemdoespelhosp.com.br/payment_return.php';
-$PAGBANK_WEBHOOK_URL = 'https://alemdoespelhosp.com.br/pagbank_webhook.php';
-$PAGBANK_DEFAULT_EMAIL = 'dkaortiz@gmail.com';
+$PAGBANK_ENV = getenv('PAGBANK_ENV') ?: 'sandbox';
+$PAGBANK_ACCESS_TOKEN = getenv('PAGBANK_ACCESS_TOKEN') ?: '';
+$PAGBANK_REDIRECT_URL = getenv('PAGBANK_REDIRECT_URL') ?: 'https://alemdoespelhosp.com.br/payment_return.php';
+$PAGBANK_WEBHOOK_URL = getenv('PAGBANK_WEBHOOK_URL') ?: 'https://alemdoespelhosp.com.br/pagbank_webhook.php';
+$PAGBANK_DEFAULT_EMAIL = getenv('PAGBANK_DEFAULT_EMAIL') ?: 'dkaortiz@gmail.com';
 
 // Configuração admin: autenticação exclusivamente via tabela `admins`
 
@@ -110,7 +142,10 @@ function pagbankApiRequest($path, $payload = null, $method = 'POST') {
 
     $token = trim((string) $PAGBANK_ACCESS_TOKEN);
     if ($token === '') {
-        return ['ok' => false, 'message' => 'Token do PagBank não configurado.'];
+        return [
+            'ok' => false,
+            'message' => 'Token do PagBank não configurado. Defina a variável de ambiente PAGBANK_ACCESS_TOKEN com um token válido do ambiente correto (sandbox ou production).',
+        ];
     }
 
     $authorizationHeader = stripos($token, 'Bearer ') === 0 ? $token : 'Bearer ' . $token;
