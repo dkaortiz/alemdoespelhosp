@@ -138,7 +138,7 @@ if ($form_type === 'peregrino') {
     $stmt->close();
 
     // Inserir anfitrião
-    $payment_amount = 150.00;
+    $payment_amount = 100.00;
     // Sempre usar 'pendente' no cadastro; anfitriões sem histórico ficarão sinalizados por peregrino_anterior = 0
     $payment_status = 'pendente';
     $criado_em = date('Y-m-d H:i:s');
@@ -171,11 +171,8 @@ if ($form_type === 'peregrino') {
     $_SESSION['pagbank_checkout_url'] = $checkoutResult['checkout_url'] ?? null;
     $_SESSION['pagbank_reference_id'] = $checkoutResult['reference_id'] ?? null;
 
-    if ($foi_peregrino) {
-        header('Location: payment.php');
-    } else {
-        header('Location: confirmation.php?pending_admin=1');
-    }
+    // Redirect all anfitriões to the payment page so they can complete checkout immediately.
+    header('Location: payment.php');
     exit;
 } else {
     header('Location: inscricao.php?error=Tipo%20inválido');

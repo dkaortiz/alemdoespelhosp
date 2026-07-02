@@ -71,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'payment_status' => $refresh['status'] ?? $row['payment_status'] ?? 'pendente',
                 'pagbank_status' => $refresh['pagbank_status'] ?? $row['pagbank_status'] ?? null,
                 'pagbank_payment_id' => $refresh['payment_id'] ?? $row['pagbank_payment_id'] ?? null,
+                'pagbank_checkout_id' => $row['pagbank_checkout_id'] ?? null,
+                'checkout_url' => $refresh['checkout_url'] ?? null,
             ];
 
             header('Location: user_area.php');
@@ -89,29 +91,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
 </head>
 <body>
-    <main class="section">
-        <div class="container" style="max-width: 560px;">
-            <div class="glass-strong" style="padding: 2rem; border-radius: 16px;">
-                <h2 style="margin-top: 0; color: var(--primary);">Acesso da inscrição</h2>
-                <p style="color: var(--muted);">Informe o e-mail e o telefone usados na inscrição para ver o status do pagamento.</p>
+    <main class="section section-vignette">
+        <div class="container">
+            <div class="login-card glass-strong">
+                <div style="padding: 2.5rem 2rem 1.75rem;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                        <div>
+                            <span style="display:block; color: rgba(255,255,255,0.72); letter-spacing:0.16em; text-transform:uppercase; font-size:0.8rem; margin-bottom:0.75rem;">Área do Participante</span>
+                            <h1 style="margin:0; font-size: clamp(2rem, 4vw, 2.8rem); font-family: 'Playfair Display', serif; line-height:1.05; color: #f8f1d3;">Acompanhe sua inscrição</h1>
+                        </div>
+                        <span style="font-size:0.85rem; color: rgba(255,255,255,0.72); font-weight:600;">Verifique o status do seu pagamento</span>
+                    </div>
 
-                <?php if (!empty($error)): ?>
-                    <div style="padding: 1rem; border-radius: 12px; background: rgba(220, 38, 38, 0.12); color: #b91c1c; margin-bottom: 1rem;">
-                        <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
-                    </div>
-                <?php endif; ?>
+                    <p style="margin:1.5rem 0 0; color: rgba(255,255,255,0.78); line-height:1.8; max-width: 42rem;">
+                        Use os mesmos dados da inscrição para acessar sua área. Caso o pagamento já tenha sido confirmado, você verá o status imediatamente.
+                    </p>
+                </div>
 
-                <form method="post">
-                    <div class="form-group">
-                        <label>E-mail</label>
-                        <input type="email" name="email" placeholder="seu@email.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Telefone</label>
-                        <input type="tel" name="telefone" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="11999999999" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
-                </form>
+                <div style="border-top: 1px solid rgba(255,255,255,0.08);
+                            padding: 2rem 2rem 2.5rem;">
+                    <?php if (!empty($error)): ?>
+                        <div class="form-error">
+                            <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="post" class="form-card">
+                        <div class="form-group">
+                            <label for="email">E-mail</label>
+                            <input id="email" type="email" name="email" placeholder="seu@email.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">Telefone</label>
+                            <input id="telefone" type="tel" name="telefone" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="11999999999" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Entrar</button>
+                    </form>
+
+                    <p class="form-note">Se preferir, use o telefone ou o e-mail cadastrado na inscrição.</p>
+                </div>
             </div>
         </div>
     </main>

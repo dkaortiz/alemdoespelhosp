@@ -253,7 +253,7 @@ $pending_admin = isset($_GET['pending_admin']);
                             <div class="step-number">3</div>
                             <div class="step-content">
                                 <p><strong>Pagamento</strong></p>
-                                <p>Após aprovação, você receberá as instruções de pagamento (R$ 150,00)</p>
+                                <p>Após aprovação, você receberá as instruções de pagamento (R$ 100,00)</p>
                             </div>
                         </div>
                     </div>

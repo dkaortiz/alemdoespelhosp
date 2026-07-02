@@ -226,20 +226,7 @@ function createPagbankCheckout($registrationId, $registrationType, $customerName
     }
 
     $body = $result['body'] ?? [];
-    $checkoutUrl = null;
-
-    if (!empty($body['links'])) {
-        foreach ($body['links'] as $link) {
-            if (($link['rel'] ?? '') === 'PAY' || ($link['rel'] ?? '') === 'SELF') {
-                $checkoutUrl = $link['href'];
-                break;
-            }
-        }
-    }
-
-    if (empty($checkoutUrl) && !empty($body['checkout_url'])) {
-        $checkoutUrl = $body['checkout_url'];
-    }
+    $checkoutUrl = extractPagbankCheckoutUrl($body);
 
     return [
         'success' => true,
@@ -290,20 +277,32 @@ function extractPagbankCheckoutUrl($body) {
         return null;
     }
 
+    // Prefer the user-facing payment URL (rel=PAY) when available.
     if (!empty($body['links']) && is_array($body['links'])) {
+        // First pass: look for PAY
         foreach ($body['links'] as $link) {
-            if (is_array($link) && in_array(($link['rel'] ?? ''), ['PAY', 'SELF', 'CHECKOUT'], true)) {
+            if (is_array($link) && isset($link['rel']) && strtoupper($link['rel']) === 'PAY') {
                 return $link['href'] ?? null;
+            }
+        }
+
+        // Second pass: look for explicit payment_url or checkout_url links
+        foreach ($body['links'] as $link) {
+            if (is_array($link) && isset($link['rel'])) {
+                $rel = strtoupper($link['rel']);
+                if ($rel === 'PAYMENT' || $rel === 'CHECKOUT' || $rel === 'SELF') {
+                    return $link['href'] ?? null;
+                }
             }
         }
     }
 
-    if (!empty($body['checkout_url'])) {
-        return $body['checkout_url'];
-    }
-
     if (!empty($body['payment_url'])) {
         return $body['payment_url'];
+    }
+
+    if (!empty($body['checkout_url'])) {
+        return $body['checkout_url'];
     }
 
     return null;
