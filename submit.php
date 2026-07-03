@@ -112,6 +112,7 @@ if ($form_type === 'peregrino') {
     $_SESSION['registration_id'] = $id;
     $_SESSION['registration_type'] = 'peregrino';
     $_SESSION['pagbank_checkout_url'] = $checkoutResult['checkout_url'] ?? null;
+    $_SESSION['pagbank_checkout_id'] = $checkoutResult['checkout_id'] ?? null;
     $_SESSION['pagbank_reference_id'] = $checkoutResult['reference_id'] ?? null;
 
     header('Location: payment.php');
@@ -169,6 +170,7 @@ if ($form_type === 'peregrino') {
     $_SESSION['registration_id'] = $id;
     $_SESSION['registration_type'] = 'anfitriao';
     $_SESSION['pagbank_checkout_url'] = $checkoutResult['checkout_url'] ?? null;
+    $_SESSION['pagbank_checkout_id'] = $checkoutResult['checkout_id'] ?? null;
     $_SESSION['pagbank_reference_id'] = $checkoutResult['reference_id'] ?? null;
 
     // Redirect all anfitriões to the payment page so they can complete checkout immediately.

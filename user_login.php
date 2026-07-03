@@ -91,6 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
 </head>
 <body>
+    <nav style="padding: 1rem 0; background: rgba(255,255,255,0.05);">
+        <div class="container" style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+            <a href="index.php" style="color:#fff; text-decoration:none; font-weight:700; padding:0.75rem 1rem; border-radius:999px; background: rgba(255,255,255,0.08);">← Voltar para Home</a>
+        </div>
+    </nav>
     <main class="section section-vignette">
         <div class="container">
             <div class="login-card glass-strong">

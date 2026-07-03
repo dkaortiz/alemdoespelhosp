@@ -1,20 +1,50 @@
 <?php
 declare(strict_types=1);
-session_start();
 require_once 'config.php';
 
+$session_dir = __DIR__ . '/sessions';
+if (!is_dir($session_dir)) {
+    @mkdir($session_dir, 0755, true);
+}
+@session_save_path($session_dir);
+session_start();
+
+// Detectar se é uma requisição AJAX
+$is_ajax = (
+    isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest'
+) || (isset($_POST['ajax']) && $_POST['ajax'] === '1');
+
+function sendJsonResponse(array $data, int $status = 200): void {
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code($status);
+    echo json_encode($data);
+    exit;
+}
+
 if (!isAdminAuthenticated()) {
+    if ($is_ajax) {
+        sendJsonResponse(['success' => false, 'message' => 'Não autorizado'], 401);
+    }
     header('Location: admin.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($is_ajax) {
+        sendJsonResponse(['success' => false, 'message' => 'Método inválido'], 405);
+    }
     header('Location: admin.php');
     exit;
 }
 
 $action = $_POST['action'] ?? '';
 $admin_username = $_SESSION['admin_username'] ?? 'admin';
+
+// DEBUG: Log da ação recebida
+error_log("ADMIN_ACTION: action={$action}, id=" . ($_POST['id'] ?? 'vazio') . ", is_ajax=" . ($is_ajax ? 'sim' : 'não'));
 
 // CADASTRAR PEREGRINO VIA ADMIN
 if ($action === 'admin_cadastro_peregrino') {
@@ -36,7 +66,7 @@ if ($action === 'admin_cadastro_peregrino') {
         );
 
         if ($stmt) {
-            $stmt->bind_param('ssssdiss', $nome, $email, $genero, $telefone, $payment_amount, $pix_cents, $payment_status, $admin_username, $confirmed_at);
+            $stmt->bind_param('ssssdisss', $nome, $email, $genero, $telefone, $payment_status, $payment_amount, $pix_cents, $admin_username, $confirmed_at);
             
             if ($stmt->execute()) {
                 $_SESSION['admin_success'] = "✓ Peregrino '{$nome}' cadastrado com sucesso!";
@@ -73,7 +103,7 @@ if ($action === 'admin_cadastro_anfitriao') {
         );
 
         if ($stmt) {
-            $stmt->bind_param('ssssdiss', $nome, $email, $funcao, $telefone, $payment_amount, $pix_cents, $payment_status, $admin_username, $confirmed_at);
+            $stmt->bind_param('ssssdisss', $nome, $email, $funcao, $telefone, $payment_status, $payment_amount, $pix_cents, $admin_username, $confirmed_at);
             
             if ($stmt->execute()) {
                 $_SESSION['admin_success'] = "✓ Anfitrião '{$nome}' cadastrado com sucesso!";
@@ -88,6 +118,179 @@ if ($action === 'admin_cadastro_anfitriao') {
 
     header('Location: admin.php#cadastro');
     exit;
+}
+
+// DELETAR PEREGRINO
+if ($action === 'delete_peregrino') {
+    $id = (int) ($_POST['id'] ?? 0);
+    $success_delete = false;
+    $error_msg = '';
+    
+    if ($id > 0) {
+        $stmt = $mysqli->prepare("DELETE FROM peregrinos WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param('i', $id);
+            $success_delete = $stmt->execute();
+            $affected_rows = $stmt->affected_rows;
+            $stmt->close();
+            
+            if (!$success_delete) {
+                $error_msg = $mysqli->error;
+            }
+        } else {
+            $error_msg = $mysqli->error;
+        }
+    } else {
+        $error_msg = "ID inválido";
+    }
+    
+    // Se for AJAX, retorna JSON
+    if ($is_ajax) {
+        ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => $success_delete && $affected_rows > 0,
+            'message' => $success_delete && $affected_rows > 0 ? 'Peregrino deletado com sucesso!' : ('Erro ao deletar: ' . $error_msg)
+        ]);
+        exit;
+    }
+    
+    // Se for requisição normal, redireciona
+    if ($success_delete) {
+        $_SESSION['admin_success'] = "✓ Peregrino deletado com sucesso!";
+    } else {
+        $_SESSION['admin_error'] = "✗ Erro ao deletar peregrino: " . $error_msg;
+    }
+    
+    header('Location: admin.php#peregrinos');
+    exit;
+}
+
+// DELETAR ANFITRIÃO
+if ($action === 'delete_anfitriao') {
+    $id = (int) ($_POST['id'] ?? 0);
+    $success_delete = false;
+    $error_msg = '';
+    
+    if ($id > 0) {
+        $stmt = $mysqli->prepare("DELETE FROM anfitrioes WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param('i', $id);
+            $success_delete = $stmt->execute();
+            $affected_rows = $stmt->affected_rows;
+            $stmt->close();
+            
+            if (!$success_delete) {
+                $error_msg = $mysqli->error;
+            }
+        } else {
+            $error_msg = $mysqli->error;
+        }
+    } else {
+        $error_msg = "ID inválido";
+    }
+    
+    // Se for AJAX, retorna JSON
+    if ($is_ajax) {
+        ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => $success_delete && $affected_rows > 0,
+            'message' => $success_delete && $affected_rows > 0 ? 'Anfitrião deletado com sucesso!' : ('Erro ao deletar: ' . $error_msg)
+        ]);
+        exit;
+    }
+    
+    // Se for requisição normal, redireciona
+    if ($success_delete) {
+        $_SESSION['admin_success'] = "✓ Anfitrião deletado com sucesso!";
+    } else {
+        $_SESSION['admin_error'] = "✗ Erro ao deletar anfitrião: " . $error_msg;
+    }
+    
+    header('Location: admin.php#anfitrioes');
+    exit;
+}
+
+// ATUALIZAR STATUS DO PAGBANK VIA ADMIN
+if ($action === 'refresh_pagbank_status') {
+    $table = $_POST['table'] ?? '';
+    $id = (int) ($_POST['id'] ?? 0);
+
+    if (!in_array($table, ['peregrinos', 'anfitrioes'], true) || $id <= 0) {
+        sendJsonResponse(['success' => false, 'message' => 'Tabela ou ID inválido'], 400);
+    }
+
+    $stmt = $mysqli->prepare("SELECT pagbank_checkout_id FROM `$table` WHERE id = ? LIMIT 1");
+    if (!$stmt) {
+        sendJsonResponse(['success' => false, 'message' => 'Erro ao preparar consulta de checkout'], 500);
+    }
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $stmt->close();
+
+    if (empty($row['pagbank_checkout_id'])) {
+        sendJsonResponse(['success' => false, 'message' => 'Checkout do PagBank não encontrado para essa inscrição.'], 404);
+    }
+
+    $refresh = refreshPagbankRegistrationStatus($mysqli, $table, $id, $row['pagbank_checkout_id']);
+    if (!$refresh['ok']) {
+        sendJsonResponse(['success' => false, 'message' => $refresh['message'] ?? 'Não foi possível atualizar o status do PagBank.']);
+    }
+
+    sendJsonResponse([
+        'success' => true,
+        'message' => 'Status do PagBank atualizado com sucesso.',
+        'data' => [
+            'pagbank_status' => $refresh['pagbank_status'] ?? null,
+            'payment_id' => $refresh['payment_id'] ?? null,
+            'checkout_url' => $refresh['checkout_url'] ?? null,
+            'body' => $refresh['body'] ?? null,
+        ],
+    ]);
+}
+
+// ATIVAR CHECKOUT DO PAGBANK VIA ADMIN
+if ($action === 'activate_pagbank_checkout') {
+    $table = $_POST['table'] ?? '';
+    $id = (int) ($_POST['id'] ?? 0);
+
+    if (!in_array($table, ['peregrinos', 'anfitrioes'], true) || $id <= 0) {
+        sendJsonResponse(['success' => false, 'message' => 'Tabela ou ID inválido'], 400);
+    }
+
+    $stmt = $mysqli->prepare("SELECT pagbank_checkout_id FROM `$table` WHERE id = ? LIMIT 1");
+    if (!$stmt) {
+        sendJsonResponse(['success' => false, 'message' => 'Erro ao preparar consulta de checkout'], 500);
+    }
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $stmt->close();
+
+    if (empty($row['pagbank_checkout_id'])) {
+        sendJsonResponse(['success' => false, 'message' => 'Checkout do PagBank não encontrado para essa inscrição.'], 404);
+    }
+
+    $activate = activatePagbankCheckout($row['pagbank_checkout_id']);
+    if (!$activate['ok']) {
+        sendJsonResponse(['success' => false, 'message' => $activate['message'] ?? 'Não foi possível ativar o checkout.']);
+    }
+
+    $refresh = refreshPagbankRegistrationStatus($mysqli, $table, $id, $row['pagbank_checkout_id']);
+    sendJsonResponse([
+        'success' => true,
+        'message' => 'Checkout ativado e status atualizado com sucesso.',
+        'data' => [
+            'pagbank_status' => $refresh['pagbank_status'] ?? null,
+            'payment_id' => $refresh['payment_id'] ?? null,
+            'checkout_url' => $refresh['checkout_url'] ?? null,
+            'body' => $refresh['body'] ?? null,
+        ],
+    ]);
 }
 
 // APROVAR/REJEITAR PENDENTES (código original)
@@ -117,6 +320,10 @@ if ($id && in_array($tipo, ['peregrino', 'anfitriao'])) {
 
     header('Location: admin.php?success=' . ($action === 'approve' ? 'confirmado' : 'rejeitado'));
     exit;
+}
+
+if ($is_ajax) {
+    sendJsonResponse(['success' => false, 'message' => 'Ação inválida ou não reconhecida'], 400);
 }
 
 header('Location: admin.php');

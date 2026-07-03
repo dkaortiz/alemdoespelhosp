@@ -256,16 +256,22 @@ function savePagbankCheckoutData($mysqli, $table, $id, $checkoutData) {
 }
 
 function updateRegistrationPaymentStatus($mysqli, $table, $id, $status, $event = null, $paymentId = null, $payload = null) {
-    $stmt = $mysqli->prepare("UPDATE `$table` SET payment_status = ?, pagbank_status = ?, pagbank_last_event = ?, pagbank_payment_id = ?, pagbank_payload = ? WHERE id = ?");
-    if (!$stmt) {
+    try {
+        $stmt = $mysqli->prepare("UPDATE `$table` SET payment_status = ?, pagbank_status = ?, pagbank_last_event = ?, pagbank_payment_id = ?, pagbank_payload = ? WHERE id = ?");
+        if (!$stmt) {
+            error_log('updateRegistrationPaymentStatus prepare failed: ' . $mysqli->error);
+            return false;
+        }
+
+        $payloadJson = is_array($payload) ? json_encode($payload) : $payload;
+        $stmt->bind_param('sssssi', $status, $status, $event, $paymentId, $payloadJson, $id);
+        $ok = $stmt->execute();
+        $stmt->close();
+        return $ok;
+    } catch (Throwable $e) {
+        error_log('updateRegistrationPaymentStatus exception: ' . $e->getMessage());
         return false;
     }
-
-    $payloadJson = is_array($payload) ? json_encode($payload) : $payload;
-    $stmt->bind_param('sssssi', $status, $status, $event, $paymentId, $payloadJson, $id);
-    $ok = $stmt->execute();
-    $stmt->close();
-    return $ok;
 }
 
 function normalizePhoneForLookup($value) {
@@ -308,15 +314,62 @@ function extractPagbankCheckoutUrl($body) {
     return null;
 }
 
+function extractPagbankStatusValue(array $body): string {
+    $candidates = [
+        $body['status'] ?? null,
+        $body['payment_status'] ?? null,
+        $body['payment_response']['status'] ?? null,
+        $body['data']['status'] ?? null,
+        $body['data']['object']['status'] ?? null,
+        $body['data']['charges'][0]['status'] ?? null,
+        $body['data']['payments'][0]['status'] ?? null,
+        $body['data']['object']['charges'][0]['status'] ?? null,
+    ];
+
+    foreach ($candidates as $value) {
+        if (!empty($value)) {
+            return strtolower((string) $value);
+        }
+    }
+    return '';
+}
+
+function extractPagbankPaymentId(array $body): ?string {
+    $candidates = [
+        $body['payment_id'] ?? null,
+        $body['id'] ?? null,
+        $body['data']['payment_id'] ?? null,
+        $body['data']['id'] ?? null,
+        $body['data']['object']['id'] ?? null,
+        $body['data']['charges'][0]['id'] ?? null,
+        $body['data']['payments'][0]['id'] ?? null,
+        $body['data']['object']['charges'][0]['id'] ?? null,
+    ];
+
+    foreach ($candidates as $value) {
+        if (!empty($value)) {
+            return (string) $value;
+        }
+    }
+    return null;
+}
+
 function mapPagbankStatusToRegistrationStatus($body) {
     $rawStatus = '';
     if (is_array($body)) {
-        $rawStatus = (string) ($body['status'] ?? $body['payment_status'] ?? $body['payment_response']['status'] ?? '');
+        $rawStatus = extractPagbankStatusValue($body);
     }
 
-    $status = strtolower($rawStatus);
+    $status = strtolower(trim($rawStatus));
     if (in_array($status, ['paid', 'approved', 'authorized', 'confirmed', 'settled', 'success', 'succeeded'], true)) {
         return 'confirmado';
+    }
+
+    if ($status === 'active') {
+        $paymentId = extractPagbankPaymentId($body);
+        if (!empty($paymentId)) {
+            return 'confirmado';
+        }
     }
 
     if (in_array($status, ['canceled', 'cancelled', 'expired', 'failed', 'declined', 'rejected'], true)) {
@@ -355,6 +408,31 @@ function refreshPagbankRegistrationStatus($mysqli, $table, $id, $checkoutId = nu
         'payment_id' => $paymentId,
         'checkout_url' => $checkoutUrl,
         'body' => $body,
+    ];
+}
+
+function activatePagbankCheckout($checkoutId) {
+    if (empty($checkoutId)) {
+        return [
+            'ok' => false,
+            'message' => 'Checkout do PagBank não informado.',
+        ];
+    }
+
+    $result = pagbankApiRequest('/checkouts/' . rawurlencode($checkoutId) . '/activate', null, 'POST');
+    if (!$result['ok']) {
+        return [
+            'ok' => false,
+            'message' => $result['message'] ?? 'Não foi possível ativar o checkout no PagBank.',
+            'http_code' => $result['http_code'] ?? null,
+            'body' => $result['body'] ?? null,
+        ];
+    }
+
+    return [
+        'ok' => true,
+        'body' => $result['body'] ?? [],
+        'http_code' => $result['http_code'] ?? null,
     ];
 }
 

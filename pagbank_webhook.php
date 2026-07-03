@@ -10,6 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = file_get_contents('php://input');
+$logFile = __DIR__ . '/pagbank_webhook.log';
+$logMessage = date('Y-m-d H:i:s') . ' - PagBank Webhook received: ' . $input . PHP_EOL;
+file_put_contents($logFile, $logMessage, FILE_APPEND);
+error_log('PagBank Webhook received: ' . $input);
+error_log('PagBank Webhook signature header: ' . ($_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? ''));
+
 $payload = json_decode($input, true);
 
 if (!is_array($payload)) {
@@ -21,21 +27,8 @@ if (!is_array($payload)) {
 $event = $payload['event'] ?? $payload['type'] ?? null;
 $referenceId = $payload['reference_id'] ?? $payload['data']['reference_id'] ?? null;
 
-// Tentar extrair o ID da transação/pagamento a partir de várias estruturas possíveis
-$paymentId = null;
-if (!empty($payload['payment_id'])) $paymentId = $payload['payment_id'];
-if (!$paymentId && !empty($payload['data']['payment_id'])) $paymentId = $payload['data']['payment_id'];
-if (!$paymentId && !empty($payload['id'])) $paymentId = $payload['id'];
-if (!$paymentId && !empty($payload['data']['id'])) $paymentId = $payload['data']['id'];
-if (!$paymentId && !empty($payload['data']['charges']) && is_array($payload['data']['charges'])) {
-    $first = $payload['data']['charges'][0] ?? null;
-    if ($first && !empty($first['id'])) $paymentId = $first['id'];
-}
-
-// Algumas notificações retornam o objeto completo em 'data' ou 'object'
-if (!$paymentId && !empty($payload['data']['object']['id'])) {
-    $paymentId = $payload['data']['object']['id'];
-}
+$paymentId = extractPagbankPaymentId($payload);
+$pagbankStatus = extractPagbankStatusValue($payload);
 
 if (empty($referenceId)) {
     http_response_code(400);
@@ -57,15 +50,29 @@ if (!$registrationType || !$registrationId) {
 }
 
 $table = $registrationType === 'peregrino' ? 'peregrinos' : 'anfitrioes';
-$mappedStatus = 'pendente';
-if ($event && strpos(strtolower($event), 'paid') !== false) {
-    $mappedStatus = 'confirmado';
-} elseif ($event && strpos(strtolower($event), 'canceled') !== false) {
-    $mappedStatus = 'cancelado';
-} elseif ($event && strpos(strtolower($event), 'chargeback') !== false) {
-    $mappedStatus = 'cancelado';
+$mappedStatus = mapPagbankStatusToRegistrationStatus($payload);
+if ($mappedStatus === 'pendente' && $event) {
+    $lowerEvent = strtolower($event);
+    if (strpos($lowerEvent, 'paid') !== false || strpos($lowerEvent, 'approved') !== false || strpos($lowerEvent, 'completed') !== false) {
+        $mappedStatus = 'confirmado';
+    } elseif (strpos($lowerEvent, 'canceled') !== false || strpos($lowerEvent, 'cancelled') !== false || strpos($lowerEvent, 'chargeback') !== false) {
+        $mappedStatus = 'cancelado';
+    }
 }
 
-updateRegistrationPaymentStatus($mysqli, $table, $registrationId, $mappedStatus, $event, $paymentId, $payload);
+try {
+    $ok = updateRegistrationPaymentStatus($mysqli, $table, $registrationId, $mappedStatus, $pagbankStatus ?? $event, $paymentId, $payload);
+    if (!$ok) {
+        error_log('Erro no DB ao atualizar status PagBank para ' . $table . ' #' . $registrationId . ': ' . $mysqli->error);
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Falha ao atualizar status no banco']);
+        exit;
+    }
+} catch (Throwable $e) {
+    error_log('Exception ao atualizar status PagBank: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'message' => 'Erro interno ao atualizar status']);
+    exit;
+}
 
 echo json_encode(['ok' => true, 'status' => $mappedStatus, 'event' => $event]);
