@@ -49,10 +49,14 @@ function loadEnvFile($path) {
 loadEnvFile(__DIR__ . '/.env');
 
 // Configuração do banco de dados
-$DB_HOST = 'alemdoespelho.mysql.dbaas.com.br';
-$DB_USER = 'alemdoespelho';
-$DB_PASS = 'IPM@1347New';
-$DB_NAME = 'alemdoespelho';
+$DB_HOST = trim((string) getenv('DB_HOST'));
+$DB_USER = trim((string) getenv('DB_USER'));
+$DB_PASS = trim((string) getenv('DB_PASS'));
+$DB_NAME = trim((string) getenv('DB_NAME'));
+
+if ($DB_HOST === '' || $DB_USER === '' || $DB_PASS === '' || $DB_NAME === '') {
+    die('Configuração do banco ausente. Defina DB_HOST, DB_USER, DB_PASS e DB_NAME no .env.');
+}
 
 // Configuração de pagamento
 $PIX_PHONE = '11993813374';
@@ -60,11 +64,27 @@ $PAYMENT_BASE = 150.00;
 $PAYMENT_AMOUNT = 150.00;
 
 // Configuração PagBank Checkout
-$PAGBANK_ENV = getenv('PAGBANK_ENV') ?: 'sandbox';
-$PAGBANK_ACCESS_TOKEN = getenv('PAGBANK_ACCESS_TOKEN') ?: '';
-$PAGBANK_REDIRECT_URL = getenv('PAGBANK_REDIRECT_URL') ?: 'https://alemdoespelhosp.com.br/payment_return.php';
-$PAGBANK_WEBHOOK_URL = getenv('PAGBANK_WEBHOOK_URL') ?: 'https://alemdoespelhosp.com.br/pagbank_webhook.php';
-$PAGBANK_DEFAULT_EMAIL = getenv('PAGBANK_DEFAULT_EMAIL') ?: 'dkaortiz@gmail.com';
+$PAGBANK_ENV = trim((string) getenv('PAGBANK_ENV'));
+$PAGBANK_ACCESS_TOKEN = trim((string) getenv('PAGBANK_ACCESS_TOKEN'));
+$PAGBANK_REDIRECT_URL = trim((string) getenv('PAGBANK_REDIRECT_URL'));
+$PAGBANK_WEBHOOK_URL = trim((string) getenv('PAGBANK_WEBHOOK_URL'));
+$PAGBANK_DEFAULT_EMAIL = trim((string) getenv('PAGBANK_DEFAULT_EMAIL'));
+
+if ($PAGBANK_ENV === '') {
+    die('PAGBANK_ENV não configurado. Defina a variável de ambiente no .env.');
+}
+if ($PAGBANK_ACCESS_TOKEN === '') {
+    die('PAGBANK_ACCESS_TOKEN não configurado. Defina a variável de ambiente no .env.');
+}
+if ($PAGBANK_REDIRECT_URL === '') {
+    die('PAGBANK_REDIRECT_URL não configurado. Defina a variável de ambiente no .env.');
+}
+if ($PAGBANK_WEBHOOK_URL === '') {
+    die('PAGBANK_WEBHOOK_URL não configurado. Defina a variável de ambiente no .env.');
+}
+if ($PAGBANK_DEFAULT_EMAIL === '') {
+    die('PAGBANK_DEFAULT_EMAIL não configurado. Defina a variável de ambiente no .env.');
+}
 
 // Configuração admin: autenticação exclusivamente via tabela `admins`
 
@@ -134,7 +154,14 @@ ensureRegistrationSchema($mysqli);
 
 function getPagbankApiBaseUrl() {
     global $PAGBANK_ENV;
-    return $PAGBANK_ENV === 'production' ? 'https://api.pagseguro.com' : 'https://sandbox.api.pagseguro.com';
+    if ($PAGBANK_ENV === 'production') {
+        return 'https://api.pagseguro.com';
+    }
+    if ($PAGBANK_ENV === 'sandbox') {
+        return 'https://sandbox.api.pagseguro.com';
+    }
+
+    throw new RuntimeException('PAGBANK_ENV inválido. Use sandbox ou production.');
 }
 
 function pagbankApiRequest($path, $payload = null, $method = 'POST') {
@@ -199,11 +226,25 @@ function createPagbankCheckout($registrationId, $registrationType, $customerName
     global $PAGBANK_REDIRECT_URL, $PAGBANK_WEBHOOK_URL, $PAGBANK_DEFAULT_EMAIL;
 
     $referenceId = 'inscricao-' . $registrationType . '-' . $registrationId;
+    $redirectUrl = trim((string) ($redirectUrl ?: $PAGBANK_REDIRECT_URL));
+    $webhookUrl = trim((string) ($webhookUrl ?: $PAGBANK_WEBHOOK_URL));
+    $customerEmail = trim((string) ($customerEmail ?: $PAGBANK_DEFAULT_EMAIL));
+
+    if ($redirectUrl === '') {
+        return ['success' => false, 'message' => 'PAGBANK_REDIRECT_URL não configurado'];
+    }
+    if ($webhookUrl === '') {
+        return ['success' => false, 'message' => 'PAGBANK_WEBHOOK_URL não configurado'];
+    }
+    if ($customerEmail === '') {
+        return ['success' => false, 'message' => 'PAGBANK_DEFAULT_EMAIL não configurado'];
+    }
+
     $payload = [
         'reference_id' => $referenceId,
         'customer' => [
             'name' => $customerName,
-            'email' => !empty($customerEmail) ? $customerEmail : $PAGBANK_DEFAULT_EMAIL,
+            'email' => $customerEmail,
         ],
         'items' => [[
             'reference_id' => $referenceId,
@@ -215,9 +256,9 @@ function createPagbankCheckout($registrationId, $registrationType, $customerName
             'value' => $amountCents,
             'currency' => 'BRL',
         ],
-        'redirect_url' => $redirectUrl ?: $PAGBANK_REDIRECT_URL,
-        'return_url' => $redirectUrl ?: $PAGBANK_REDIRECT_URL,
-        'notification_urls' => array_filter([$webhookUrl ?: $PAGBANK_WEBHOOK_URL]),
+        'redirect_url' => $redirectUrl,
+        'return_url' => $redirectUrl,
+        'notification_urls' => array_filter([$webhookUrl]),
     ];
 
     $result = pagbankApiRequest('/checkouts', $payload, 'POST');
@@ -365,15 +406,12 @@ function mapPagbankStatusToRegistrationStatus($body) {
         return 'confirmado';
     }
 
-    if ($status === 'active') {
-        $paymentId = extractPagbankPaymentId($body);
-        if (!empty($paymentId)) {
-            return 'confirmado';
-        }
-    }
-
     if (in_array($status, ['canceled', 'cancelled', 'expired', 'failed', 'declined', 'rejected'], true)) {
         return 'cancelado';
+    }
+
+    if (in_array($status, ['active', 'created', 'pending', 'processing', 'in_progress', 'inreview', 'waiting'], true)) {
+        return 'pendente';
     }
 
     return 'pendente';

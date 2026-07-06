@@ -8,6 +8,12 @@ if (empty($_SESSION['user_access'])) {
 }
 
 $user = $_SESSION['user_access'];
+
+$paymentStatus = strtolower((string) ($user['payment_status'] ?? 'pendente'));
+$pagbankStatus = strtolower((string) ($user['pagbank_status'] ?? ''));
+$showPaymentButton = !empty($user['checkout_url'])
+    && !in_array($paymentStatus, ['confirmado', 'cancelado', 'aprovado', 'comprovante_enviado'], true)
+    && !in_array($pagbankStatus, ['paid', 'approved', 'authorized', 'confirmed', 'settled', 'success', 'succeeded', 'canceled', 'cancelled', 'expired', 'failed', 'declined', 'rejected'], true);
 ?><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -35,9 +41,9 @@ $user = $_SESSION['user_access'];
                         <strong>Status no PagBank:</strong> <?php echo htmlspecialchars($user['pagbank_status'] ?? 'Não consultado', ENT_QUOTES, 'UTF-8'); ?><br>
                         <strong>ID do pagamento:</strong> <?php echo htmlspecialchars($user['pagbank_payment_id'] ?? 'Ainda não disponível', ENT_QUOTES, 'UTF-8'); ?><br>
                         <strong>ID do checkout:</strong> <?php echo htmlspecialchars($user['pagbank_checkout_id'] ?? 'Não disponível', ENT_QUOTES, 'UTF-8'); ?><br>
-                        <?php if (!empty($user['checkout_url']) && ($user['payment_status'] === 'pendente' || strtolower($user['pagbank_status'] ?? '') === 'pending')): ?>
+                        <?php if ($showPaymentButton): ?>
                             <div style="margin-top:0.5rem;">
-                                <a href="<?php echo htmlspecialchars($user['checkout_url'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary" target="_blank">Ir para pagamento</a>
+                                <a href="<?php echo htmlspecialchars($user['checkout_url'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary" target="_blank">Efetuar pagamento</a>
                             </div>
                         <?php endif; ?>
                         <?php if (!empty($user['pagbank_payload'])): ?>

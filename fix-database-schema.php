@@ -1,11 +1,16 @@
 <?php
 declare(strict_types=1);
 
-// Conexão com banco de dados
-$DB_HOST = 'alemdoespelho.mysql.dbaas.com.br';
-$DB_USER = 'alemdoespelho';
-$DB_PASS = 'IPM@1347New';
-$DB_NAME = 'alemdoespelho';
+require_once 'config.php';
+
+$DB_HOST = trim((string) getenv('DB_HOST'));
+$DB_USER = trim((string) getenv('DB_USER'));
+$DB_PASS = trim((string) getenv('DB_PASS'));
+$DB_NAME = trim((string) getenv('DB_NAME'));
+
+if ($DB_HOST === '' || $DB_USER === '' || $DB_PASS === '' || $DB_NAME === '') {
+    die('Configuração do banco ausente. Defina DB_HOST, DB_USER, DB_PASS e DB_NAME no .env.');
+}
 
 $mysqli = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
 if ($mysqli->connect_errno) {

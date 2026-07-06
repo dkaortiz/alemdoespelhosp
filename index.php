@@ -69,89 +69,34 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
     </header>
 
     <main>
-        <!-- 1. HERO SECTION CINEMATOGRÁFICO PREMIUM -->
-        <section class="section" style="min-height: 100vh; display: flex; align-items: center; position: relative; overflow: hidden; padding-top: 0;">
-            <div style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(45, 27, 105, 0.5));
-                z-index: 1;
-            "></div>
-            
-            <div class="container" style="position: relative; z-index: 2;">
-                <div class="hero-content" style="text-align: center; animation: fadeInUp 0.8s ease;">
-                    <div style="font-size: 9rem; margin-bottom: 1.5rem; animation: float-particle 8s ease-in-out infinite;">🪞</div>
-                    
-                    <h1 style="
-                        font-size: clamp(2.5rem, 5vw, 4rem);
-                        line-height: 1.1;
-                        margin: 0 0 1.5rem;
-                        background: linear-gradient(135deg, #4338CA, #7c3aed, #06b6d4);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                        font-weight: 800;
-                        letter-spacing: -0.02em;
-                        text-shadow: 0 0 60px rgba(67, 56, 202, 0.3);
-                    ">
-                        Além do Espelho
-                    </h1>
-                    
-                    <p style="
-                        font-size: 1.25rem;
-                        color: var(--accent);
-                        margin: 0 0 1.5rem;
-                        font-weight: 600;
-                        letter-spacing: 0.05em;
-                        text-transform: uppercase;
-                    ">
-                        🎭 1ª Edição: O Confronto
-                    </p>
-                    
-                    <p style="
-                        font-size: 1.1rem;
-                        color: var(--muted);
-                        max-width: 800px;
-                        margin: 0 auto 2rem;
-                        line-height: 1.8;
-                        font-weight: 300;
-                    ">
-                        Antes do propósito, existe o confronto. Um encontro transformador que pode mudar toda a sua história. Confronte verdades, quebre máscaras e descubra quem você realmente é.
-                    </p>
-                    
-                    <div class="hero-actions" style="
-                        display: flex;
-                        justify-content: center;
-                        gap: 1.5rem;
-                        flex-wrap: wrap;
-                        margin-bottom: 3rem;
-                    ">
-                        <button onclick="openInscriptionModal()" class="btn btn-primary" style="animation: bounce-smooth 2s ease-in-out infinite; font-size: 1.05rem; padding: 1rem 2rem; border: none; cursor: pointer;">
-                            🚀 Inscrever-se Agora
-                        </button>
-                        <a href="edicoes.php" class="btn btn-secondary" style="font-size: 1.05rem; padding: 1rem 2rem;">📖 Saiba Mais</a>
-                    </div>
-                    
-                    <p style="
-                        color: var(--muted);
-                        font-size: 0.95rem;
-                        font-style: italic;
-                    ">
-                        "Sonda-me, ó Deus, e conhece o meu coração." — Salmos 139:23
-                    </p>
-                    
-                    <div style="margin-top: 3rem; font-size: 2rem; animation: fadeInUp 1.2s ease; letter-spacing: 1rem;">
-                        ✨ 🔥 💎 ✨
+        <!-- 1. HERO SECTION COM VÍDEO FULLSCREEN -->
+        <section class="hero-video-section">
+            <video autoplay loop muted playsinline preload="auto" poster="public/video/DavidOrtiz.jpg" aria-hidden="true">
+                <source src="public/video/DavidOrtiz.mp4" type="video/mp4">
+            </video>
+            <div class="hero-video-overlay"></div>
+
+            <div class="container hero-video-content">
+                <div class="hero-video-panel glass-strong">
+                    <div class="hero-video-pill">Evento transformador</div>
+                    <div class="hero-video-actions">
+                        <a href="inscricao.php" class="btn btn-primary">Inscrever-se agora</a>
+                        <a href="edicoes.php" class="btn btn-secondary">Conhecer a edição</a>
                     </div>
                 </div>
             </div>
         </section>
 
+        <section class="logo-showcase-section">
+            <div class="container">
+                <div class="logo-showcase-card">
+                    <img src="public/Logosemfundo.png" alt="Logo Além do Espelho" loading="eager">
+                </div>
+            </div>
+        </section>
+
         <!-- 2. POR QUE PARTICIPAR -->
-        <section class="section" style="background: linear-gradient(135deg, rgba(45, 27, 105, 0.4), rgba(15, 23, 42, 0.6));">
+        <section class="section" ">
             <div class="container">
                 <div class="section-heading">
                     <h2>🌟 Por Que Participar?</h2>
@@ -159,25 +104,25 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                 </div>
 
                 <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.8rem;">
-                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(67, 56, 202, 0.3); animation: fadeInUp 0.6s ease;">
+                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(216, 178, 119, 0.24); animation: fadeInUp 0.6s ease;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
                         <h3 style="color: var(--accent); margin-bottom: 0.8rem; font-size: 1.15rem;">Autossuperação</h3>
                         <p style="color: var(--muted); font-size: 0.95rem;">Vença limites internos e descubra seu verdadeiro potencial.</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(67, 56, 202, 0.3); animation: fadeInUp 0.6s ease 0.1s backwards;">
+                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(216, 178, 119, 0.24); animation: fadeInUp 0.6s ease 0.1s backwards;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🤝</div>
                         <h3 style="color: var(--accent); margin-bottom: 0.8rem; font-size: 1.15rem;">Comunidade</h3>
                         <p style="color: var(--muted); font-size: 0.95rem;">Conecte-se com pessoas que buscam transformação genuína.</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(67, 56, 202, 0.3); animation: fadeInUp 0.6s ease 0.2s backwards;">
+                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(216, 178, 119, 0.24); animation: fadeInUp 0.6s ease 0.2s backwards;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">💪</div>
                         <h3 style="color: var(--accent); margin-bottom: 0.8rem; font-size: 1.15rem;">Força Interior</h3>
                         <p style="color: var(--muted); font-size: 0.95rem;">Desenvolva resiliência emocional e espiritual duradoura.</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(67, 56, 202, 0.3); animation: fadeInUp 0.6s ease 0.3s backwards;">
+                    <div class="glass-strong" style="padding: 2rem; border: 1px solid rgba(216, 178, 119, 0.24); animation: fadeInUp 0.6s ease 0.3s backwards;">
                         <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎯</div>
                         <h3 style="color: var(--accent); margin-bottom: 0.8rem; font-size: 1.15rem;">Clareza</h3>
                         <p style="color: var(--muted); font-size: 0.95rem;">Encontre sentido e direção para sua vida.</p>
@@ -185,7 +130,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                 </div>
             </div>
         </section>
-        <section class="section" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(45, 27, 105, 0.6)); backdrop-filter: blur(10px);">
+        <section class="section"  backdrop-filter: blur(10px);">
             <div class="container">
                 <div class="section-heading">
                     <h2>⚡ Edição <?php echo $edition['ano'] ?? 2026; ?> - <?php echo htmlspecialchars($edition['titulo'] ?? 'O Confronto'); ?></h2>
@@ -193,7 +138,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                 </div>
 
                 <div class="cards-grid" style="grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 3rem;">
-                    <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease; border: 2px solid rgba(67, 56, 202, 0.5); background: linear-gradient(135deg, rgba(67, 56, 202, 0.15), rgba(124, 58, 237, 0.05));">
+                    <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease; border: 2px solid rgba(216, 178, 119, 0.28); background: linear-gradient(135deg, rgba(216, 178, 119, 0.16), rgba(255, 248, 235, 0.06));">
                         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👨</div>
                         <div style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1rem; font-weight: bold; text-shadow: 0 0 20px rgba(67, 56, 202, 0.3); animation: pulse-glow 2s ease-in-out infinite;">
                             <?php echo $remainingM; ?>
@@ -204,7 +149,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                         <p style="color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem;">Limite: <?php echo $limite_homem; ?> peregrinos</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease 0.1s backwards; border: 2px solid rgba(124, 58, 237, 0.5); background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05));">
+                    <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease 0.1s backwards; border: 2px solid rgba(216, 178, 119, 0.28); background: linear-gradient(135deg, rgba(216, 178, 119, 0.16), rgba(255, 248, 235, 0.05));">
                         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👩</div>
                         <div style="font-size: 3.5rem; color: var(--accent); margin-bottom: 1rem; font-weight: bold; text-shadow: 0 0 20px rgba(124, 58, 237, 0.3); animation: pulse-glow 2s ease-in-out infinite;">
                             <?php echo $remainingF; ?>
@@ -215,7 +160,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                         <p style="color: var(--accent); font-size: 0.8rem; margin-top: 0.5rem;">Limite: <?php echo $limite_mulher; ?> peregrinas</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease 0.2s backwards; border: 2px solid rgba(6, 182, 212, 0.5); background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.05));">
+                    <div class="glass-strong" style="padding: 2.5rem; text-align: center; animation: fadeInUp 0.6s ease 0.2s backwards; border: 2px solid rgba(216, 178, 119, 0.28); background: linear-gradient(135deg, rgba(216, 178, 119, 0.14), rgba(255, 248, 235, 0.04));">
                         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💳</div>
                         <div style="font-size: 3.5rem; color: var(--accent-secondary); margin-bottom: 1rem; font-weight: bold; text-shadow: 0 0 20px rgba(6, 182, 212, 0.3);">
                             R$ 150
@@ -229,8 +174,8 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
                     <?php if ($edition['data_inicio'] || $edition['data_fim']): ?>
-                    <div style="padding: 2.5rem; border: 2px solid rgba(217, 70, 239, 0.6); background: linear-gradient(135deg, rgba(217, 70, 239, 0.2), rgba(168, 85, 247, 0.1)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(217, 70, 239, 0.3); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease;">
-                        <p style="color: #d946ef; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(217, 70, 239, 0.4);">📅 Datas do Evento</p>
+                    <div style="padding: 2.5rem; border: 2px solid rgba(216, 178, 119, 0.28); background: linear-gradient(135deg, rgba(216, 178, 119, 0.14), rgba(255, 248, 235, 0.06)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(216, 178, 119, 0.16); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease;">
+                        <p style="color: #f2dcc0; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(216, 178, 119, 0.24);">📅 Datas do Evento</p>
                         <p style="color: #ec4899; font-size: 1.6rem; margin: 0 0 0.5rem; font-weight: 800; line-height: 1.2;">
                             <?php 
                             $data_inicio_fmt = formatDatePT($edition['data_inicio']);
@@ -239,15 +184,15 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                             ?>
                         </p>
                         <?php if ($edition['local']): ?>
-                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(217, 70, 239, 0.3);">
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(216, 178, 119, 0.24);">
                             <p style="color: #f472b6; font-size: 1.1rem; margin: 0; font-weight: 600;">📍 <?php echo htmlspecialchars($edition['local']); ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
 
-                    <div style="padding: 2.5rem; border: 2px solid rgba(6, 182, 212, 0.6); background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.1)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(6, 182, 212, 0.3); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease 0.1s backwards;">
-                        <p style="color: #06b6d4; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);">⏰ Inscrições Abertas</p>
+                    <div style="padding: 2.5rem; border: 2px solid rgba(216, 178, 119, 0.28); background: linear-gradient(135deg, rgba(216, 178, 119, 0.14), rgba(255, 248, 235, 0.05)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(216, 178, 119, 0.16); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease 0.1s backwards;">
+                        <p style="color: #f2dcc0; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(216, 178, 119, 0.24);">⏰ Inscrições Abertas</p>
                         <p style="color: #22d3ee; font-size: 1.4rem; margin: 0; font-weight: 800;">
                             <?php 
                             $data_insc_inicio = formatDatePT($edition['data_inscricao_inicio'] ?? '2026-06-02');
@@ -355,7 +300,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
         </section>
 
         <!-- 5. SEÇÃO DE DEPOIMENTOS -->
-        <section class="section" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(45, 27, 105, 0.6));">
+        <section class="section" ">
             <div class="container">
                 <div class="section-heading">
                     <h2>💬 O Que Dizem Sobre o Evento</h2>
@@ -464,14 +409,32 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
             </div>
         </section>
 
-        <!-- 7. CHAMADA FINAL PARA AÇÃO -->
-        <section class="section" style="background: linear-gradient(135deg, rgba(67, 56, 202, 0.2), rgba(124, 58, 237, 0.15)); position: relative; overflow: hidden;">
-            <div style="position: absolute; top: -50px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(124, 58, 237, 0.1), transparent); border-radius: 50%; z-index: 0;"></div>
-            <div style="position: absolute; bottom: -50px; left: -80px; width: 250px; height: 250px; background: radial-gradient(circle, rgba(6, 182, 212, 0.1), transparent); border-radius: 50%; z-index: 0;"></div>
+        <!-- 7. SEÇÃO COM IMAGEM FULLSCREEN -->
+        <section class="full-image-section">
+            <div class="container" style="position: relative; z-index: 1;">
+                <div class="image-content-card">
+                    <h2 style="font-size: clamp(2rem, 4vw, 3rem);">
+                        O chamado para a transformação começa aqui
+                    </h2>
+                    <p style="font-size: 1.08rem; line-height: 1.8; margin-bottom: 2rem;">
+                        Uma experiência profunda, acolhedora e transformadora para quem busca verdade, propósito e renovação.
+                    </p>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="inscricao.php" class="btn btn-primary">Inscrever-se agora</a>
+                        <a href="regras.php" class="btn btn-secondary">Ver regulamentos</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. CHAMADA FINAL PARA AÇÃO -->
+        <section class="section" style="background: linear-gradient(135deg, rgba(216, 178, 119, 0.16), rgba(255, 248, 235, 0.08)); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -50px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(216, 178, 119, 0.12), transparent); border-radius: 50%; z-index: 0;"></div>
+            <div style="position: absolute; bottom: -50px; left: -80px; width: 250px; height: 250px; background: radial-gradient(circle, rgba(244, 225, 178, 0.12), transparent); border-radius: 50%; z-index: 0;"></div>
             
             <div class="container" style="position: relative; z-index: 1;">
                 <div style="text-align: center; max-width: 800px; margin: 0 auto;">
-                    <h2 style="font-size: 2.8rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #4338CA, #7c3aed, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: fadeInUp 0.6s ease;">
+                    <h2 style="font-size: 2.8rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #f4e1b2, #c9994f, #8a5a24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: fadeInUp 0.6s ease;">
                         🎯 Sua Transformação Começa Agora
                     </h2>
                     
@@ -480,9 +443,9 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                     </p>
 
                     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; animation: fadeInUp 0.6s ease 0.2s backwards;">
-                        <button onclick="openInscriptionModal()" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem; min-width: 200px; border: none; cursor: pointer;">
+                        <a href="inscricao.php" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem; min-width: 200px; border: none; cursor: pointer;">
                             🚀 Inscrever-se Agora
-                        </button>
+                        </a>
                         <a href="regras.php" class="btn btn-secondary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem;">
                             📋 Ver Regulamentos
                         </a>
@@ -494,19 +457,19 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                 </div>
 
                 <div style="margin-top: 4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-                    <div class="glass-strong" style="padding: 1.8rem; text-align: center; animation: fadeInUp 0.6s ease 0.4s backwards; border: 1px solid rgba(67, 56, 202, 0.3);">
+                    <div class="glass-strong" style="padding: 1.8rem; text-align: center; animation: fadeInUp 0.6s ease 0.4s backwards; border: 1px solid rgba(216, 178, 119, 0.24);">
                         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏆</div>
                         <p style="color: var(--accent); font-weight: 600; margin: 0;">Evento Premium</p>
                         <p style="color: var(--muted); font-size: 0.85rem; margin: 0.3rem 0 0;">Experiência de classe internacional</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 1.8rem; text-align: center; animation: fadeInUp 0.6s ease 0.5s backwards; border: 1px solid rgba(67, 56, 202, 0.3);">
+                    <div class="glass-strong" style="padding: 1.8rem; text-align: center; animation: fadeInUp 0.6s ease 0.5s backwards; border: 1px solid rgba(216, 178, 119, 0.24);">
                         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
                         <p style="color: var(--accent); font-weight: 600; margin: 0;">Comunidade Exclusiva</p>
                         <p style="color: var(--muted); font-size: 0.85rem; margin: 0.3rem 0 0;">Conecte com pessoas genuínas</p>
                     </div>
 
-                    <div class="glass-strong" style="padding: 1.8rem; text-align: center; animation: fadeInUp 0.6s ease 0.6s backwards; border: 1px solid rgba(67, 56, 202, 0.3);">
+                    <div class="glass-strong" style="padding: 1.8rem; text-align: center; animation: fadeInUp 0.6s ease 0.6s backwards; border: 1px solid rgba(216, 178, 119, 0.24);">
                         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✨</div>
                         <p style="color: var(--accent); font-weight: 600; margin: 0;">Transformação Real</p>
                         <p style="color: var(--muted); font-size: 0.85rem; margin: 0.3rem 0 0;">Mudanças que duram a vida toda</p>
@@ -532,8 +495,8 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
         animation: fadeIn 0.3s ease;
     ">
         <div class="modal-content" style="
-            background: linear-gradient(135deg, rgba(67, 56, 202, 0.15), rgba(124, 58, 237, 0.1));
-            border: 1px solid rgba(67, 56, 202, 0.3);
+            background: linear-gradient(135deg, rgba(216, 178, 119, 0.16), rgba(255, 248, 235, 0.08));
+            border: 1px solid rgba(216, 178, 119, 0.24);
             backdrop-filter: blur(16px);
             border-radius: 20px;
             padding: 3rem;
@@ -541,7 +504,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
             width: 90%;
             text-align: center;
             animation: slideInUp 0.4s ease;
-            box-shadow: 0 20px 60px rgba(67, 56, 202, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
         ">
             <div style="font-size: 4rem; margin-bottom: 1.5rem; animation: float 3s ease-in-out infinite;">🔧</div>
             <h2 style="
@@ -557,7 +520,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                 Estamos preparando nosso sistema de inscrições com as melhores práticas de segurança e qualidade.
             </p>
             <div style="
-                background: rgba(67, 56, 202, 0.1);
+                background: rgba(216, 178, 119, 0.12);
                 border-left: 4px solid var(--accent-secondary);
                 padding: 1.5rem;
                 border-radius: 12px;
@@ -583,7 +546,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                     border: none;
                     cursor: pointer;
                     font-size: 1rem;
-                    background: linear-gradient(135deg, #06b6d4, #0891b2);
+                    background: linear-gradient(135deg, #d8b277, #b8864b);
                     color: white;
                 ">
                     📱 Fale Conosco no WhatsApp
@@ -600,7 +563,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                     border: none;
                     cursor: pointer;
                     font-size: 1rem;
-                    background: rgba(67, 56, 202, 0.2);
+                    background: rgba(216, 178, 119, 0.16);
                     color: var(--text);
                 ">
                     ✕ Fechar
