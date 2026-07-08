@@ -446,10 +446,25 @@ $pendentes = $mysqli->query(
                         <p><strong>Nome:</strong> <?= htmlspecialchars($lookup_row['nome'] ?? ''); ?></p>
                         <p><strong>E-mail:</strong> <?= htmlspecialchars($lookup_row['email'] ?? ''); ?></p>
                         <p><strong>Telefone:</strong> <?= htmlspecialchars($lookup_row['telefone'] ?? ''); ?></p>
-                        <p><strong>Status:</strong> <?= htmlspecialchars(ucfirst($lookup_row['payment_status'] ?? 'pendente')); ?></p>
+                        <p><strong>Status Pagamento:</strong> <span class="status-badge status-<?= str_replace('_', '-', $lookup_row['payment_status'] ?? 'pendente'); ?>"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $lookup_row['payment_status'] ?? 'pendente'))); ?></span></p>
                         <p><strong>Status no PagBank:</strong> <?= htmlspecialchars($lookup_refresh['pagbank_status'] ?? $lookup_row['pagbank_status'] ?? 'Não consultado'); ?></p>
                         <p><strong>ID do checkout:</strong> <?= htmlspecialchars($lookup_row['pagbank_checkout_id'] ?? 'Não disponível'); ?></p>
                         <p><strong>ID do pagamento:</strong> <?= htmlspecialchars($lookup_refresh['payment_id'] ?? $lookup_row['pagbank_payment_id'] ?? 'Ainda não disponível'); ?></p>
+                        
+                        <!-- Link de Pagamento Usado -->
+                        <div style="margin: 1rem 0; padding: 1rem; background: rgba(212, 175, 55, 0.1); border-radius: 8px;">
+                            <p style="margin: 0 0 0.5rem; color: var(--muted); font-weight: 600;">💳 Link de Pagamento Usado:</p>
+                            <p style="margin: 0; color: #f4d27a; word-break: break-all;">
+                                <?php if (!empty($lookup_row['pagbank_payment_link'])): ?>
+                                    <a href="<?= htmlspecialchars($lookup_row['pagbank_payment_link'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="color: #fbbf24; text-decoration: underline;">
+                                        <?= htmlspecialchars($lookup_row['pagbank_payment_link'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </a>
+                                    <br><small style="color: var(--muted);">(Tipo: <?= htmlspecialchars($lookup_row['payment_link_type'] ?? 'indefinido', ENT_QUOTES, 'UTF-8'); ?>)</small>
+                                <?php else: ?>
+                                    <em>Não rastreado</em>
+                                <?php endif; ?>
+                            </p>
+                        </div>
                         
                         <!-- Status Ativo/Inativo -->
                         <div style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
@@ -458,6 +473,19 @@ $pendentes = $mysqli->query(
                                 <?= $lookup_row['is_active'] ? '✅ Ativo' : '❌ Desativado' ?>
                             </p>
                         </div>
+                        
+                        <!-- Log de Aprovação -->
+                        <?php if (!empty($lookup_row['payment_confirmed_by'])): ?>
+                            <div style="margin: 1rem 0; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                                <p style="margin: 0 0 0.5rem; color: var(--muted); font-weight: 600;">✅ Aprovado por:</p>
+                                <p style="margin: 0; color: #86efac;">
+                                    <strong><?= htmlspecialchars($lookup_row['payment_confirmed_by'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                    <?php if (!empty($lookup_row['payment_confirmed_at'])): ?>
+                                        <br><small style="color: var(--muted);">em <?= date('d/m/Y H:i:s', strtotime($lookup_row['payment_confirmed_at'])); ?></small>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                        <?php endif; ?>
 
                         <!-- Comprovante de Pagamento -->
                         <?php if (!empty($lookup_row['payment_receipt'])): ?>
@@ -552,6 +580,7 @@ $pendentes = $mysqli->query(
 
         <nav class="tabs">
             <button class="tab-btn active" data-target="cadastro">➕ Cadastro</button>
+            <button class="tab-btn" data-target="aprovacoes">✅ Aprovações</button>
             <button class="tab-btn" data-target="pendentes">⏳ Pendentes</button>
             <button class="tab-btn" data-target="peregrinos">🧘 Peregrinos</button>
             <button class="tab-btn" data-target="anfitrioes">👥 Anfitriões</button>
@@ -594,6 +623,99 @@ $pendentes = $mysqli->query(
             </div>
         </div>
 
+        <div id="aprovacoes" class="tab-content">
+            <div class="glass-strong" style="padding: 2rem; border-radius: 12px;">
+                <h2 style="color: var(--primary); margin-top: 0;">✅ Painel de Aprovações</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Peregrinos Pendentes -->
+                    <div style="background: rgba(67, 56, 202, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary);">
+                        <h3 style="margin-top: 0; color: var(--primary);">🧘 Peregrinos Pendentes</h3>
+                        <?php 
+                            $peregrinos_pending = $mysqli->query("SELECT COUNT(*) as total FROM peregrinos WHERE payment_status = 'pendente'");
+                            $count_perg_pending = $peregrinos_pending->fetch_assoc()['total'] ?? 0;
+                        ?>
+                        <p style="margin: 0.5rem 0 1rem; font-size: 1.5rem; font-weight: 700; color: #3b82f6;"><?= $count_perg_pending ?></p>
+                        <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Aguardando comprovante ou pagamento</p>
+                    </div>
+                    
+                    <!-- Anfitriões Pendentes -->
+                    <div style="background: rgba(244, 208, 63, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--accent);">
+                        <h3 style="margin-top: 0; color: var(--accent);">👥 Anfitriões Pendentes</h3>
+                        <?php 
+                            $anfitrioes_pending = $mysqli->query("SELECT COUNT(*) as total FROM anfitrioes WHERE payment_status = 'pendente'");
+                            $count_anf_pending = $anfitrioes_pending->fetch_assoc()['total'] ?? 0;
+                        ?>
+                        <p style="margin: 0.5rem 0 1rem; font-size: 1.5rem; font-weight: 700; color: #f4d27a;"><?= $count_anf_pending ?></p>
+                        <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Aguardando comprovante ou pagamento</p>
+                    </div>
+                    
+                    <!-- Comprovantes Enviados -->
+                    <div style="background: rgba(245, 158, 11, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid #f59e0b;">
+                        <h3 style="margin-top: 0; color: #f59e0b;">📄 Comprovantes Enviados</h3>
+                        <?php 
+                            $comprovantes_enviados = $mysqli->query("
+                                SELECT COUNT(*) as total FROM (
+                                    SELECT id FROM peregrinos WHERE payment_status = 'comprovante_enviado'
+                                    UNION ALL
+                                    SELECT id FROM anfitrioes WHERE payment_status = 'comprovante_enviado'
+                                ) as t
+                            ");
+                            $count_compr = $comprovantes_enviados->fetch_assoc()['total'] ?? 0;
+                        ?>
+                        <p style="margin: 0.5rem 0 1rem; font-size: 1.5rem; font-weight: 700; color: #f59e0b;"><?= $count_compr ?></p>
+                        <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Aguardando análise do admin</p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--primary); margin-top: 2rem;">Histórico de Aprovações Recentes</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Link Pagamento</th>
+                                <th>Aprovado por</th>
+                                <th>Data/Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                                $aprovados = $mysqli->query("
+                                    (SELECT 'peregrino' as tipo, nome, email, pagbank_payment_link, payment_link_type, payment_confirmed_by, payment_confirmed_at FROM peregrinos WHERE payment_status = 'confirmado' AND payment_confirmed_by IS NOT NULL ORDER BY payment_confirmed_at DESC LIMIT 10)
+                                    UNION ALL
+                                    (SELECT 'anfitriao' as tipo, nome, email, pagbank_payment_link, payment_link_type, payment_confirmed_by, payment_confirmed_at FROM anfitrioes WHERE payment_status = 'confirmado' AND payment_confirmed_by IS NOT NULL ORDER BY payment_confirmed_at DESC LIMIT 10)
+                                    ORDER BY payment_confirmed_at DESC LIMIT 20
+                                ");
+                                if ($aprovados->num_rows > 0):
+                                    while ($row = $aprovados->fetch_assoc()):
+                            ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['nome']) ?></td>
+                                <td><?= htmlspecialchars($row['email']) ?></td>
+                                <td><span class="status-badge" style="background: <?= $row['tipo'] === 'peregrino' ? 'rgba(67, 56, 202, 0.2)' : 'rgba(244, 208, 63, 0.2)' ?>; color: <?= $row['tipo'] === 'peregrino' ? '#3b82f6' : '#f4d27a' ?>;"><?= ucfirst($row['tipo']) ?></span></td>
+                                <td style="font-size: 0.85rem;">
+                                    <?= htmlspecialchars($row['payment_link_type'] ?? 'indefinido') ?>
+                                </td>
+                                <td><?= htmlspecialchars($row['payment_confirmed_by'] ?? '-') ?></td>
+                                <td><?= !empty($row['payment_confirmed_at']) ? date('d/m/y H:i', strtotime($row['payment_confirmed_at'])) : '-' ?></td>
+                            </tr>
+                            <?php 
+                                    endwhile;
+                                else:
+                            ?>
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--muted);">Nenhuma aprovação registrada</td>
+                            </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div id="pendentes" class="tab-content">
             <div class="glass-strong" style="padding: 2rem; border-radius: 12px; overflow-x: auto;">
                 <?php if ($pendentes->num_rows > 0): ?>
@@ -625,24 +747,88 @@ $pendentes = $mysqli->query(
         </div>
 
         <div id="peregrinos" class="tab-content">
-            <div class="glass-strong" style="padding: 2rem; border-radius: 12px; overflow-x: auto;">
+            <div class="glass-strong" style="padding: 2rem; border-radius: 12px;">
+                <h2 style="color: var(--primary); margin-top: 0;">🧘 Peregrinos - Total <?php echo $total_peregrinos; ?></h2>
+                
+                <!-- Contadores -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div style="background: rgba(67, 56, 202, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">Todos</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: var(--primary);"><?= $total_peregrinos ?></p>
+                    </div>
+                    <?php 
+                        $pending = $mysqli->query("SELECT COUNT(*) as total FROM peregrinos WHERE payment_status = 'pendente'");
+                        $confirmed = $mysqli->query("SELECT COUNT(*) as total FROM peregrinos WHERE payment_status = 'confirmado'");
+                        $enviado = $mysqli->query("SELECT COUNT(*) as total FROM peregrinos WHERE payment_status = 'comprovante_enviado'");
+                    ?>
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">Pendentes</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #3b82f6;"><?= $pending->fetch_assoc()['total'] ?? 0 ?></p>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">Comprovante</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;"><?= $enviado->fetch_assoc()['total'] ?? 0 ?></p>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">✅ Confirmados</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #10b981;"><?= $confirmed->fetch_assoc()['total'] ?? 0 ?></p>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <button class="tab-btn status-filter" data-filter="todos" style="background: linear-gradient(90deg, rgba(255,215,128,0.98), rgba(255,200,80,0.95)); color: #0a0805; border: none; cursor: pointer;" onclick="filterPeregrinosStatus('todos')">Todos</button>
+                    <button class="tab-btn status-filter" data-filter="pendente" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; cursor: pointer;" onclick="filterPeregrinosStatus('pendente')">⏳ Pendentes</button>
+                    <button class="tab-btn status-filter" data-filter="comprovante_enviado" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: none; cursor: pointer;" onclick="filterPeregrinosStatus('comprovante_enviado')">📄 Comprovante</button>
+                    <button class="tab-btn status-filter" data-filter="confirmado" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: none; cursor: pointer;" onclick="filterPeregrinosStatus('confirmado')">✅ Confirmados</button>
+                </div>
+
+                <!-- Tabela -->
+                <div style="overflow-x: auto;">
                 <?php 
-                $peregrinos_all = $mysqli->query("SELECT id, nome, email, genero, payment_status FROM peregrinos ORDER BY criado_em DESC");
+                $peregrinos_all = $mysqli->query("SELECT id, nome, email, genero, payment_status, payment_link_type, pagbank_payment_link, criado_em, payment_confirmed_by, payment_confirmed_at FROM peregrinos ORDER BY criado_em DESC");
                 if ($peregrinos_all && $peregrinos_all->num_rows > 0):
                 ?>
                 <table>
-                    <thead><tr><th>Nome</th><th>Email</th><th>Gênero</th><th>Status</th><th>Ações</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Gênero</th>
+                            <th>Status Pagamento</th>
+                            <th>Data Inscrição</th>
+                            <th>Aprovado por</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <?php while ($row = $peregrinos_all->fetch_assoc()): ?>
-                        <tr id="row-peregrino-<?= $row['id'] ?>">
-                            <td><?= htmlspecialchars($row['nome']) ?></td>
+                        <tr id="row-peregrino-<?= $row['id'] ?>" class="status-row" data-status="<?= $row['payment_status'] ?>">
+                            <td><strong><?= htmlspecialchars($row['nome']) ?></strong></td>
                             <td><?= htmlspecialchars($row['email']) ?></td>
-                            <td><?= $row['genero'] == 'masculino' ? '👨' : '👩' ?></td>
-                            <td><span class="status-badge status-<?= $row['payment_status'] ?>"><?= ucfirst($row['payment_status']) ?></span></td>
+                            <td><?= $row['genero'] == 'masculino' ? '👨 Masculino' : '👩 Feminino' ?></td>
                             <td>
-                                <button type="button" class="btn-action" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; cursor: pointer;" onclick="deletePeregrino(<?= $row['id'] ?>, '<?= htmlspecialchars($row['nome']) ?>')">
-                                    🗑️ Excluir
-                                </button>
+                                <span class="status-badge status-<?= str_replace('_', '-', $row['payment_status']) ?>">
+                                    <?php 
+                                        if ($row['payment_status'] === 'pendente') echo '⏳ Pendente';
+                                        elseif ($row['payment_status'] === 'comprovante_enviado') echo '📄 Enviado';
+                                        elseif ($row['payment_status'] === 'confirmado') echo '✅ Confirmado';
+                                        else echo ucfirst($row['payment_status']);
+                                    ?>
+                                </span>
+                            </td>
+                            <td><?= date('d/m/Y H:i', strtotime($row['criado_em'])) ?></td>
+                            <td><?= !empty($row['payment_confirmed_by']) ? htmlspecialchars($row['payment_confirmed_by']) . ' em ' . date('d/m/y', strtotime($row['payment_confirmed_at'])) : '-' ?></td>
+                            <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button type="button" class="btn-action" style="background: rgba(67, 56, 202, 0.2); color: #3b82f6; border: 1px solid #3b82f6; cursor: pointer;" onclick="viewPeregrinoDetails(<?= $row['id'] ?>)">👁️ Ver</button>
+                                <?php if ($row['payment_status'] !== 'confirmado'): ?>
+                                <form method="post" style="display: contents;">
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="hidden" name="target" value="peregrinos">
+                                    <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; cursor: pointer;">✅ Aprovar</button>
+                                </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endwhile; ?>
@@ -651,28 +837,93 @@ $pendentes = $mysqli->query(
                 <?php else: ?>
                     <p style="text-align: center; color: var(--muted);">Nenhum peregrino inscrito.</p>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
 
         <div id="anfitrioes" class="tab-content">
-            <div class="glass-strong" style="padding: 2rem; border-radius: 12px; overflow-x: auto;">
+            <div class="glass-strong" style="padding: 2rem; border-radius: 12px;">
+                <h2 style="color: var(--accent); margin-top: 0;">👥 Anfitriões - Total <?php echo $total_anfitrioes; ?></h2>
+                
+                <!-- Contadores -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div style="background: rgba(244, 208, 63, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">Todos</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: var(--accent);"><?= $total_anfitrioes ?></p>
+                    </div>
+                    <?php 
+                        $pending_anf = $mysqli->query("SELECT COUNT(*) as total FROM anfitrioes WHERE payment_status = 'pendente'");
+                        $confirmed_anf = $mysqli->query("SELECT COUNT(*) as total FROM anfitrioes WHERE payment_status = 'confirmado'");
+                        $enviado_anf = $mysqli->query("SELECT COUNT(*) as total FROM anfitrioes WHERE payment_status = 'comprovante_enviado'");
+                    ?>
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">Pendentes</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #3b82f6;"><?= $pending_anf->fetch_assoc()['total'] ?? 0 ?></p>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">Comprovante</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;"><?= $enviado_anf->fetch_assoc()['total'] ?? 0 ?></p>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem;">✅ Confirmados</p>
+                        <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #10b981;"><?= $confirmed_anf->fetch_assoc()['total'] ?? 0 ?></p>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <button class="tab-btn status-filter" data-filter="todos" style="background: linear-gradient(90deg, rgba(255,215,128,0.98), rgba(255,200,80,0.95)); color: #0a0805; border: none; cursor: pointer;" onclick="filterAnfitriaoStatus('todos')">Todos</button>
+                    <button class="tab-btn status-filter" data-filter="pendente" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: none; cursor: pointer;" onclick="filterAnfitriaoStatus('pendente')">⏳ Pendentes</button>
+                    <button class="tab-btn status-filter" data-filter="comprovante_enviado" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: none; cursor: pointer;" onclick="filterAnfitriaoStatus('comprovante_enviado')">📄 Comprovante</button>
+                    <button class="tab-btn status-filter" data-filter="confirmado" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: none; cursor: pointer;" onclick="filterAnfitriaoStatus('confirmado')">✅ Confirmados</button>
+                </div>
+
+                <!-- Tabela -->
+                <div style="overflow-x: auto;">
                 <?php 
-                $anfitrioes_all = $mysqli->query("SELECT id, nome, email, funcao, payment_status FROM anfitrioes ORDER BY criado_em DESC");
+                $anfitrioes_all = $mysqli->query("SELECT id, nome, email, funcao, payment_status, payment_link_type, pagbank_payment_link, criado_em, payment_confirmed_by, payment_confirmed_at FROM anfitrioes ORDER BY criado_em DESC");
                 if ($anfitrioes_all && $anfitrioes_all->num_rows > 0):
                 ?>
                 <table>
-                    <thead><tr><th>Nome</th><th>Email</th><th>Função</th><th>Status</th><th>Ações</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Função</th>
+                            <th>Status Pagamento</th>
+                            <th>Data Inscrição</th>
+                            <th>Aprovado por</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <?php while ($row = $anfitrioes_all->fetch_assoc()): ?>
-                        <tr id="row-anfitriao-<?= $row['id'] ?>">
-                            <td><?= htmlspecialchars($row['nome']) ?></td>
+                        <tr id="row-anfitriao-<?= $row['id'] ?>" class="status-row" data-status="<?= $row['payment_status'] ?>">
+                            <td><strong><?= htmlspecialchars($row['nome']) ?></strong></td>
                             <td><?= htmlspecialchars($row['email']) ?></td>
                             <td><?= htmlspecialchars($row['funcao']) ?></td>
-                            <td><span class="status-badge status-<?= $row['payment_status'] ?>"><?= ucfirst($row['payment_status']) ?></span></td>
                             <td>
-                                <button type="button" class="btn-action" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; cursor: pointer;" onclick="deleteAnfitriao(<?= $row['id'] ?>, '<?= htmlspecialchars($row['nome']) ?>')">
-                                    🗑️ Excluir
-                                </button>
+                                <span class="status-badge status-<?= str_replace('_', '-', $row['payment_status']) ?>">
+                                    <?php 
+                                        if ($row['payment_status'] === 'pendente') echo '⏳ Pendente';
+                                        elseif ($row['payment_status'] === 'comprovante_enviado') echo '📄 Enviado';
+                                        elseif ($row['payment_status'] === 'confirmado') echo '✅ Confirmado';
+                                        else echo ucfirst($row['payment_status']);
+                                    ?>
+                                </span>
+                            </td>
+                            <td><?= date('d/m/Y H:i', strtotime($row['criado_em'])) ?></td>
+                            <td><?= !empty($row['payment_confirmed_by']) ? htmlspecialchars($row['payment_confirmed_by']) . ' em ' . date('d/m/y', strtotime($row['payment_confirmed_at'])) : '-' ?></td>
+                            <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button type="button" class="btn-action" style="background: rgba(244, 208, 63, 0.2); color: #f4d27a; border: 1px solid #f4d27a; cursor: pointer;" onclick="viewAnfitriaoDetails(<?= $row['id'] ?>)">👁️ Ver</button>
+                                <?php if ($row['payment_status'] !== 'confirmado'): ?>
+                                <form method="post" style="display: contents;">
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="hidden" name="target" value="anfitrioes">
+                                    <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; cursor: pointer;">✅ Aprovar</button>
+                                </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endwhile; ?>
@@ -681,6 +932,7 @@ $pendentes = $mysqli->query(
                 <?php else: ?>
                     <p style="text-align: center; color: var(--muted);">Nenhum anfitrião inscrito.</p>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
 
@@ -952,6 +1204,40 @@ $pendentes = $mysqli->query(
                 console.error('Erro:', error);
                 showNotification('✗ Erro ao ativar checkout do PagBank.', 'error');
             });
+        }
+
+        // Funções de Filtro por Status
+        function filterPeregrinosStatus(status) {
+            const rows = document.querySelectorAll('#peregrinos .status-row');
+            rows.forEach(row => {
+                if (status === 'todos' || row.getAttribute('data-status') === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            event.target.classList.add('active');
+        }
+
+        function filterAnfitriaoStatus(status) {
+            const rows = document.querySelectorAll('#anfitrioes .status-row');
+            rows.forEach(row => {
+                if (status === 'todos' || row.getAttribute('data-status') === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            event.target.classList.add('active');
+        }
+
+        // Funções de Visualização de Detalhes
+        function viewPeregrinoDetails(id) {
+            alert('Detalhes do Peregrino ID: ' + id);
+        }
+
+        function viewAnfitriaoDetails(id) {
+            alert('Detalhes do Anfitrião ID: ' + id);
         }
 
         // Função para mostrar notificações

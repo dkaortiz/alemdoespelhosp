@@ -83,19 +83,21 @@ if ($form_type === 'peregrino') {
     $payment_amount = 150.00;
     $payment_status = 'pendente';
     $criado_em = date('Y-m-d H:i:s');
+    $pagbank_payment_link = 'https://pag.ae/81XVfHnnR';
+    $payment_link_type = 'peregrino';
 
     $stmt = $mysqli->prepare("
         INSERT INTO peregrinos 
-        (nome, email, endereco, whatsapp, genero, problema_saude, problema_saude_descricao, usa_remedio, remedio_descricao, payment_method, payment_status, payment_amount, valor, criado_em)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (nome, email, endereco, whatsapp, genero, problema_saude, problema_saude_descricao, usa_remedio, remedio_descricao, payment_method, payment_status, payment_amount, valor, criado_em, pagbank_payment_link, payment_link_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     if (!$stmt) {
         header('Location: inscricao.php?error=Erro%20ao%20salvar%20inscrição');
         exit;
     }
 
-    $types = str_repeat('s', 11) . 'dds';
-    $stmt->bind_param($types, $nome, $email, $endereco, $whatsapp, $genero, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em);
+    $types = str_repeat('s', 11) . 'ddss';
+    $stmt->bind_param($types, $nome, $email, $endereco, $whatsapp, $genero, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em, $pagbank_payment_link, $payment_link_type);
     $stmt->execute();
     $id = $mysqli->insert_id;
     $stmt->close();
@@ -138,22 +140,23 @@ if ($form_type === 'peregrino') {
 
     // Inserir anfitrião
     $payment_amount = 100.00;
-    // Sempre usar 'pendente' no cadastro; anfitriões sem histórico ficarão sinalizados por peregrino_anterior = 0
     $payment_status = 'pendente';
     $criado_em = date('Y-m-d H:i:s');
+    $pagbank_payment_link = 'https://pag.ae/81XVgCdNJ';
+    $payment_link_type = 'anfitriao';
 
     $stmt = $mysqli->prepare("
         INSERT INTO anfitrioes 
-        (nome, email, endereco, whatsapp, funcao, peregrino_anterior, problema_saude, problema_saude_descricao, usa_remedio, remedio_descricao, payment_method, payment_status, payment_amount, valor, criado_em)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (nome, email, endereco, whatsapp, funcao, peregrino_anterior, problema_saude, problema_saude_descricao, usa_remedio, remedio_descricao, payment_method, payment_status, payment_amount, valor, criado_em, pagbank_payment_link, payment_link_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     if (!$stmt) {
         header('Location: inscricao.php?error=Erro%20ao%20salvar%20inscrição');
         exit;
     }
 
-    $types = str_repeat('s', 5) . 'i' . str_repeat('s', 5) . 'dds' . 's';
-    $stmt->bind_param($types, $nome, $email, $endereco, $whatsapp, $funcao, $foi_peregrino, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em);
+    $types = str_repeat('s', 5) . 'i' . str_repeat('s', 5) . 'ddss' . 's';
+    $stmt->bind_param($types, $nome, $email, $endereco, $whatsapp, $funcao, $foi_peregrino, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em, $pagbank_payment_link, $payment_link_type);
     $stmt->execute();
     $id = $mysqli->insert_id;
     $stmt->close();
@@ -171,7 +174,7 @@ if ($form_type === 'peregrino') {
     $_SESSION['pagbank_checkout_id'] = $checkoutResult['checkout_id'] ?? null;
     $_SESSION['pagbank_reference_id'] = $checkoutResult['reference_id'] ?? null;
 
-    // Redirect all anfitriões to the payment page so they can complete checkout immediately.
+    // Redirecionar anfitrião para página de pagamento
     header('Location: payment.php');
     exit;
 } else {

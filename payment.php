@@ -37,8 +37,8 @@ $valor_formatado = number_format($payment_amount, 2, ',', '.');
 
 // Links de pagamento diretos
 $payment_links = [
-    'peregrino' => 'https://pag.ae/81XVgCdNJ',
-    'anfitriao' => 'https://pag.ae/81XVfHnnR'
+    'peregrino' => 'https://pag.ae/81XVfHnnR',
+    'anfitriao' => 'https://pag.ae/81XVgCdNJ'
 ];
 $payment_url = $payment_links[$reg_type] ?? '#';
 ?>
