@@ -54,25 +54,25 @@ $currentEdition = $editions[0] ?? null;
 
     <main>
         <!-- HERO EDIÇÕES -->
-        <section class="section" style="min-height: 500px; display: flex; align-items: center; background: linear-gradient(135deg, rgba(45, 27, 105, 0.3), rgba(67, 56, 202, 0.2)); position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1), transparent 50%); z-index: 1;"></div>
+        <section class="section" style="min-height: 500px; display: flex; align-items: center; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(34, 20, 0, 0.22), rgba(96, 63, 36, 0.18)); background-image: radial-gradient(circle at 20% 30%, rgba(255, 223, 121, 0.18), transparent 22%), radial-gradient(circle at 80% 20%, rgba(255, 196, 64, 0.16), transparent 28%), radial-gradient(circle at 50% 80%, rgba(255, 239, 179, 0.08), transparent 30%);">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 80% 20%, rgba(255, 196, 64, 0.12), transparent 50%); z-index: 1;"></div>
             
             <div class="container" style="position: relative; z-index: 2;">
                 <div style="animation: fadeInUp 0.8s ease; text-align: center;">
                     <h1 style="
                         font-size: 3.5rem;
                         margin-bottom: 1.5rem;
-                        background: linear-gradient(135deg, #4338CA, #7c3aed, #06b6d4);
+                        background: linear-gradient(135deg, #f6c34d, #e8b036, #d49e1f);
                         -webkit-background-clip: text;
                         -webkit-text-fill-color: transparent;
                         background-clip: text;
-                        font-weight: 800;
+                        font-weight: 900;
                     ">
                         ✨ Todas as Edições
                     </h1>
                     <p style="
                         font-size: 1.2rem;
-                        color: var(--muted);
+                        color: #f7e7c6;
                         max-width: 700px;
                         margin: 0 auto;
                         line-height: 1.8;
@@ -92,24 +92,34 @@ $currentEdition = $editions[0] ?? null;
                     <p><?php echo htmlspecialchars($currentEdition['descricao']); ?></p>
                 </div>
 
+                <div style="margin-bottom: 2rem; border-radius: 20px; overflow: hidden; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18);">
+                    <video autoplay muted loop playsinline preload="auto" poster="public/Logosemfundo.png" style="width: 100%; height: auto; display: block; object-fit: cover;">
+                        <source src="public/video/DavidOrtiz.mp4" type="video/mp4">
+                    </video>
+                </div>
+
                 <!-- HERO DA EDIÇÃO ATUAL -->
                 <div class="glass-strong" style="
                     text-align: center;
                     padding: 4rem 3rem;
-                    border-radius: 20px;
+                    border-radius: 24px;
                     margin-bottom: 3rem;
                     animation: fadeInScaleUp 0.8s ease;
-                    background: linear-gradient(135deg, rgba(67, 56, 202, 0.15), rgba(124, 58, 237, 0.1));
-                    border: 1px solid rgba(67, 56, 202, 0.3);
+                    background: rgba(255, 255, 255, 0.09);
+                    border: 1px solid rgba(255, 215, 112, 0.22);
+                    box-shadow: 0 30px 90px rgba(255, 199, 77, 0.18);
+                    backdrop-filter: blur(20px);
                 ">
-                    <div style="font-size: 5rem; margin-bottom: 1.5rem; animation: float 3s ease-in-out infinite;">🪞</div>
+                    <div style="width: 120px; height: 120px; margin: 0 auto 1.5rem; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255, 215, 112, 0.5); box-shadow: inset 0 0 20px rgba(255, 223, 121, 0.35);">
+                        <img src="public/Logosemfundo.png" alt="Além do Espelho" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
                     <h3 style="
-                        background: linear-gradient(135deg, #4338CA, #7c3aed, #06b6d4);
+                        background: linear-gradient(135deg, #f6c34d, #e8b036, #d49e1f);
                         -webkit-background-clip: text;
                         -webkit-text-fill-color: transparent;
                         background-clip: text;
                         font-size: 2.5rem;
-                        font-weight: 700;
+                        font-weight: 900;
                         margin-bottom: 1rem;
                     ">
                         <?php echo htmlspecialchars($currentEdition['titulo']); ?>
@@ -118,31 +128,43 @@ $currentEdition = $editions[0] ?? null;
                         "Um encontro que pode mudar toda a sua história"
                     </p>
                     
-                    <?php if ($currentEdition['data_inicio'] || $currentEdition['data_fim']): ?>
-                    <div style="background: linear-gradient(135deg, rgba(217, 70, 239, 0.2), rgba(168, 85, 247, 0.1)); border: 2px solid rgba(217, 70, 239, 0.6); padding: 2.5rem; border-radius: 16px; margin-bottom: 2rem; box-shadow: 0 0 30px rgba(217, 70, 239, 0.3); backdrop-filter: blur(16px);">
-                        <p style="color: #d946ef; font-size: 0.8rem; margin: 0 0 1.2rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(217, 70, 239, 0.4);">📅 Data e Local do Evento</p>
-                        <p style="color: #ec4899; font-size: 1.5rem; margin: 0 0 1rem; font-weight: 800; line-height: 1.3;">
-                            <?php 
-                            $data_inicio = formatDatePT($currentEdition['data_inicio']);
-                            $data_fim = formatDatePT($currentEdition['data_fim']);
-                            echo $data_inicio . ' <br/> até <br/> ' . $data_fim;
-                            ?>
+                    <div style="padding: 2.5rem; border-radius: 20px; margin-bottom: 2rem; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 215, 112, 0.18); box-shadow: inset 0 0 30px rgba(255, 199, 77, 0.08); backdrop-filter: blur(16px);">
+                        <p style="color: #d4af37; font-size: 0.8rem; margin: 0 0 1.2rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);">📅 Data e Local do Evento</p>
+                        <p style="color: #f6c34d; font-size: 1.5rem; margin: 0 0 1rem; font-weight: 800; line-height: 1.3;">
+                            7, 8 e 9 de Agosto
                         </p>
                         <?php if ($currentEdition['local']): ?>
-                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(217, 70, 239, 0.3);">
-                            <p style="color: #f472b6; font-size: 1.15rem; margin: 0; font-weight: 600;">📍 <?php echo htmlspecialchars($currentEdition['local']); ?></p>
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 215, 112, 0.16);">
+                            <p style="color: #f4d27a; font-size: 1.15rem; margin: 0; font-weight: 600;">📍 <?php echo htmlspecialchars($currentEdition['local']); ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <?php endif; ?>
                     
                     <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
-                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0s backwards;"><span style="font-size: 2.5rem;">❤️</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Confronto com Verdade</p></div>
-                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.1s backwards;"><span style="font-size: 2.5rem;">🎭</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Quebra de Máscaras</p></div>
-                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.2s backwards;"><span style="font-size: 2.5rem;">🪞</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Encontro Consigo</p></div>
-                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.3s backwards;"><span style="font-size: 2.5rem;">✝️</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Encontro com Deus</p></div>
-                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.4s backwards;"><span style="font-size: 2.5rem;">💞</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Cura</p></div>
-                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.5s backwards;"><span style="font-size: 2.5rem;">👑</span><p style="margin: 0.5rem 0 0 0; color: var(--muted);">Identidade</p></div>
+                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0s backwards; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,112,0.16); box-shadow: 0 18px 40px rgba(255, 199, 77, 0.08);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255, 215, 112, 0.16); color: #d4af37; font-size: 1.5rem;">✨</span>
+                            <p style="margin: 0; color: #f7e7c6; font-weight: 600;">Confronto com Verdade</p>
+                        </div>
+                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.1s backwards; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,112,0.16); box-shadow: 0 18px 40px rgba(255, 199, 77, 0.08);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255, 215, 112, 0.16); color: #d4af37; font-size: 1.5rem;">💫</span>
+                            <p style="margin: 0; color: #f7e7c6; font-weight: 600;">Quebra de Máscaras</p>
+                        </div>
+                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.2s backwards; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,112,0.16); box-shadow: 0 18px 40px rgba(255, 199, 77, 0.08);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255, 215, 112, 0.16); color: #d4af37; font-size: 1.5rem;">🌟</span>
+                            <p style="margin: 0; color: #f7e7c6; font-weight: 600;">Encontro Consigo</p>
+                        </div>
+                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.3s backwards; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,112,0.16); box-shadow: 0 18px 40px rgba(255, 199, 77, 0.08);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255, 215, 112, 0.16); color: #d4af37; font-size: 1.5rem;">🙏</span>
+                            <p style="margin: 0; color: #f7e7c6; font-weight: 600;">Encontro com Deus</p>
+                        </div>
+                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.4s backwards; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,112,0.16); box-shadow: 0 18px 40px rgba(255, 199, 77, 0.08);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255, 215, 112, 0.16); color: #d4af37; font-size: 1.5rem;">💞</span>
+                            <p style="margin: 0; color: #f7e7c6; font-weight: 600;">Cura</p>
+                        </div>
+                        <div style="text-align: center; animation: fadeInUp 0.6s ease 0.5s backwards; padding: 1.5rem; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,112,0.16); box-shadow: 0 18px 40px rgba(255, 199, 77, 0.08);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255, 215, 112, 0.16); color: #d4af37; font-size: 1.5rem;">👑</span>
+                            <p style="margin: 0; color: #f7e7c6; font-weight: 600;">Identidade</p>
+                        </div>
                     </div>
                     <p style="margin: 1.5rem 0; font-size: 1.2rem; color: var(--accent); font-weight: 600;">
                         ⭐ 30 Vagas Limitadas | 💳 R$ 150,00 | 
@@ -166,24 +188,28 @@ $currentEdition = $editions[0] ?? null;
 
         <!-- EDIÇÕES ANTERIORES -->
         <?php if (count($editions) > 1): ?>
-        <section class="section" style="background: linear-gradient(135deg, rgba(45, 27, 105, 0.15), rgba(67, 56, 202, 0.08));">
+        <section class="section" style="background: linear-gradient(135deg, rgba(27, 18, 9, 0.14), rgba(67, 56, 202, 0.06));">
             <div class="container">
                 <div class="section-heading">
-                    <h2>📖 Edições Anteriores</h2>
-                    <p>Reviva os momentos marcantes que já transformaram vidas</p>
+                    <h2 style="color: #f2d384;">📖 Edições Anteriores</h2>
+                    <p style="color: #fae9c9;">Reviva os momentos marcantes que já transformaram vidas</p>
                 </div>
 
                 <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
                     <?php foreach (array_slice($editions, 1) as $index => $edition): ?>
                     <div class="glass-strong" style="
                         padding: 2.5rem;
-                        border-radius: 16px;
+                        border-radius: 20px;
                         animation: fadeInUp 0.6s ease <?php echo ($index * 0.1) ?>s backwards;
                         transition: all 0.3s ease;
-                    " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--glow)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
-                        <div style="font-size: 3rem; margin-bottom: 1rem; text-align: center;">🎆</div>
+                        background: rgba(255, 255, 255, 0.08);
+                        border: 1px solid rgba(255, 215, 112, 0.18);
+                        box-shadow: 0 24px 60px rgba(255, 199, 77, 0.12);
+                        backdrop-filter: blur(16px);
+                    " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 30px 80px rgba(255, 199, 77, 0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 24px 60px rgba(255, 199, 77, 0.12)';">
+                        <div style="font-size: 3rem; margin-bottom: 1rem; text-align: center;">✨</div>
                         <h3 style="
-                            background: linear-gradient(135deg, #4338CA, #7c3aed);
+                            background: linear-gradient(135deg, #f6c34d, #e8b036, #d49e1f);
                             -webkit-background-clip: text;
                             -webkit-text-fill-color: transparent;
                             background-clip: text;
@@ -209,15 +235,21 @@ $currentEdition = $editions[0] ?? null;
         <!-- CHAMADA PARA AÇÃO -->
         <section class="section" style="text-align: center;">
             <div class="container">
-                <h2 style="margin-bottom: 1.5rem; font-size: 2.5rem; background: linear-gradient(135deg, #4338CA, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                    Junte-se à Nossa Comunidade
-                </h2>
-                <p style="color: var(--muted); margin-bottom: 2rem; font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    Cada edição é uma oportunidade de transformação. Escolha sua edição e comece sua jornada hoje.
-                </p>
-                <a href="inscricao.php" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem;">
-                    🚀 Começar Inscrição
-                </a>
+                        <h2 style="margin-bottom: 1.5rem; font-size: 2.5rem; background: linear-gradient(135deg, #f6c34d, #e8b036, #d49e1f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                            Junte-se à Nossa Comunidade
+                        </h2>
+                        <p style="color: #f7e7c6; margin-bottom: 2rem; font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                            Cada edição é uma oportunidade de transformação. Escolha sua edição e comece sua jornada hoje.
+                        </p>
+                        <a href="inscricao.php" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem; background: linear-gradient(135deg, #f6c34d, #e8b036); border: none; box-shadow: 0 20px 40px rgba(214, 175, 55, 0.25); color: #1f1f1f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 999px;">
+                            🚀 Começar Inscrição
+                        </a>
+                    </div>
+                </section>
+
+        <section class="section" style="padding: 0;">
+            <div class="container" style="padding: 0 0 3rem 0;">
+                <img src="public/Site2.png" alt="Site 2" style="width: 100%; max-width: 1200px; display: block; margin: 0 auto; border-radius: 28px; border: 6px solid rgba(216, 178, 119, 0.85); box-shadow: 0 40px 90px rgba(216, 178, 119, 0.25), 0 20px 40px rgba(0, 0, 0, 0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;">
             </div>
         </section>
     </main>
