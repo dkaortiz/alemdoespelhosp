@@ -33,6 +33,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <?php include __DIR__ . '/meta-tags.php'; ?>
     <link rel="stylesheet" href="<?php echo assetVersion('style.css'); ?>">
     <?php include __DIR__ . '/google_analytics.php'; ?>
@@ -177,11 +178,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                     <div style="padding: 2.5rem; border: 2px solid rgba(216, 178, 119, 0.28); background: linear-gradient(135deg, rgba(216, 178, 119, 0.14), rgba(255, 248, 235, 0.06)); border-radius: 16px; text-align: center; box-shadow: 0 0 30px rgba(216, 178, 119, 0.16); backdrop-filter: blur(16px); animation: fadeInUp 0.6s ease;">
                         <p style="color: #f2dcc0; font-size: 0.8rem; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-shadow: 0 0 10px rgba(216, 178, 119, 0.24);">📅 Datas do Evento</p>
                         <p style="color: #ec4899; font-size: 1.6rem; margin: 0 0 0.5rem; font-weight: 800; line-height: 1.2;">
-                            <?php 
-                            $data_inicio_fmt = formatDatePT($edition['data_inicio']);
-                            $data_fim_fmt = formatDatePT($edition['data_fim']);
-                            echo $data_inicio_fmt . ' <br/> até <br/> ' . $data_fim_fmt;
-                            ?>
+                            7, 8 e 9 de Agosto
                         </p>
                         <?php if ($edition['local']): ?>
                         <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(216, 178, 119, 0.24);">
@@ -303,49 +300,31 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
         <section class="section" ">
             <div class="container">
                 <div class="section-heading">
-                    <h2>💬 O Que Dizem Sobre o Evento</h2>
-                    <p>Histórias de transformação e impacto</p>
+                    <h2>Siga o Além do Espelho</h2>
+                    <p>Acompanhe o evento e as novidades nas redes sociais</p>
                 </div>
 
-                <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
-                    <div class="glass-strong" style="padding: 2.5rem; animation: fadeInUp 0.6s ease; position: relative; border: 1px solid rgba(124, 58, 237, 0.3);">
-                        <div style="position: absolute; top: -25px; left: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #4338CA, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">😊</div>
-                        <div style="margin-top: 1rem; margin-bottom: 1.5rem;">
-                            <p style="color: var(--muted); font-size: 1rem; line-height: 1.6; font-style: italic;">
-                                "Este evento mudou completamente minha perspectiva sobre mim mesmo. Descobri força que não sabia ter."
-                            </p>
-                        </div>
-                        <div>
-                            <p style="color: var(--accent); font-weight: 600; margin: 0;">Lucas Silva</p>
-                            <p style="color: var(--muted); font-size: 0.85rem; margin: 0;">Peregrino - 1ª Edição</p>
-                        </div>
-                    </div>
+                <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem;">
+                    <a href="https://api.whatsapp.com/send/?phone=5511977446315&text=Ol%C3%A1%2C+vim+do+site+e+tenho+d%C3%BAvidas&type=phone_number&app_absent=0" target="_blank" rel="noopener noreferrer" class="glass-strong" style="padding: 2.5rem; animation: fadeInUp 0.6s ease; text-align: center; text-decoration: none; border: 1px solid rgba(216, 178, 119, 0.28);">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem; color: #d8b277; text-shadow: 0 0 12px rgba(216, 178, 119, 0.45);"><i class="bi bi-whatsapp"></i></div>
+                        <h3 style="color: var(--accent); margin-bottom: 0.7rem; font-size: 1.15rem;">WhatsApp</h3>
+                        <p style="color: var(--muted); margin-bottom: 1rem;">Fale conosco</p>
+                        <span style="color: var(--accent-secondary); font-weight: 600;">Acesse agora ↗</span>
+                    </a>
 
-                    <div class="glass-strong" style="padding: 2.5rem; animation: fadeInUp 0.6s ease 0.1s backwards; position: relative; border: 1px solid rgba(124, 58, 237, 0.3);">
-                        <div style="position: absolute; top: -25px; left: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #4338CA, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">🌟</div>
-                        <div style="margin-top: 1rem; margin-bottom: 1.5rem;">
-                            <p style="color: var(--muted); font-size: 1rem; line-height: 1.6; font-style: italic;">
-                                "Que privilégio ser anfitriã e servir a transformação de outras pessoas. Cresci tanto quanto eles."
-                            </p>
-                        </div>
-                        <div>
-                            <p style="color: var(--accent); font-weight: 600; margin: 0;">Maria Oliveira</p>
-                            <p style="color: var(--muted); font-size: 0.85rem; margin: 0;">Anfitriã - 1ª Edição</p>
-                        </div>
-                    </div>
+                    <a href="https://www.instagram.com/alemdoespelhosp/" target="_blank" rel="noopener noreferrer" class="glass-strong" style="padding: 2.5rem; animation: fadeInUp 0.6s ease 0.1s backwards; text-align: center; text-decoration: none; border: 1px solid rgba(216, 178, 119, 0.28);">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem; color: #d8b277; text-shadow: 0 0 12px rgba(216, 178, 119, 0.45);"><i class="bi bi-instagram"></i></div>
+                        <h3 style="color: var(--accent); margin-bottom: 0.7rem; font-size: 1.15rem;">Instagram</h3>
+                        <p style="color: var(--muted); margin-bottom: 1rem;">@alemdoespelhosp</p>
+                        <span style="color: var(--accent-secondary); font-weight: 600;">Acesse agora ↗</span>
+                    </a>
 
-                    <div class="glass-strong" style="padding: 2.5rem; animation: fadeInUp 0.6s ease 0.2s backwards; position: relative; border: 1px solid rgba(124, 58, 237, 0.3);">
-                        <div style="position: absolute; top: -25px; left: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #4338CA, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">✨</div>
-                        <div style="margin-top: 1rem; margin-bottom: 1.5rem;">
-                            <p style="color: var(--muted); font-size: 1rem; line-height: 1.6; font-style: italic;">
-                                "Quebrei máscaras que carregava há anos. Agora conheço meu verdadeiro propósito."
-                            </p>
-                        </div>
-                        <div>
-                            <p style="color: var(--accent); font-weight: 600; margin: 0;">João Carlos</p>
-                            <p style="color: var(--muted); font-size: 0.85rem; margin: 0;">Peregrino - 1ª Edição</p>
-                        </div>
-                    </div>
+                    <a href="https://www.facebook.com/alemdoespelhosp" target="_blank" rel="noopener noreferrer" class="glass-strong" style="padding: 2.5rem; animation: fadeInUp 0.6s ease 0.2s backwards; text-align: center; text-decoration: none; border: 1px solid rgba(216, 178, 119, 0.28);">
+                        <div style="font-size: 3.5rem; margin-bottom: 1rem; color: #d8b277; text-shadow: 0 0 12px rgba(216, 178, 119, 0.45);"><i class="bi bi-facebook"></i></div>
+                        <h3 style="color: var(--accent); margin-bottom: 0.7rem; font-size: 1.15rem;">Facebook</h3>
+                        <p style="color: var(--muted); margin-bottom: 1rem;">@alemdoespelhosp</p>
+                        <span style="color: var(--accent-secondary); font-weight: 600;">Acesse agora ↗</span>
+                    </a>
                 </div>
             </div>
         </section>
@@ -452,7 +431,7 @@ $remainingF = max(0, $limite_mulher - getCountByGender($mysqli, 'peregrinos', 'f
                     </div>
 
                     <p style="color: var(--accent); font-size: 0.95rem; font-weight: 600; animation: fadeInUp 0.6s ease 0.3s backwards;">
-                        ⏰ Inscrições até 30 de Junho de 2026
+                        📅 Evento nos dias 7, 8 e 9 de Agosto
                     </p>
                 </div>
 

@@ -446,17 +446,62 @@ $pendentes = $mysqli->query(
                         <p><strong>Nome:</strong> <?= htmlspecialchars($lookup_row['nome'] ?? ''); ?></p>
                         <p><strong>E-mail:</strong> <?= htmlspecialchars($lookup_row['email'] ?? ''); ?></p>
                         <p><strong>Telefone:</strong> <?= htmlspecialchars($lookup_row['telefone'] ?? ''); ?></p>
-                        <p><strong>Status no sistema:</strong> <?= htmlspecialchars(ucfirst($lookup_row['payment_status'] ?? 'pendente')); ?></p>
+                        <p><strong>Status:</strong> <?= htmlspecialchars(ucfirst($lookup_row['payment_status'] ?? 'pendente')); ?></p>
                         <p><strong>Status no PagBank:</strong> <?= htmlspecialchars($lookup_refresh['pagbank_status'] ?? $lookup_row['pagbank_status'] ?? 'Não consultado'); ?></p>
                         <p><strong>ID do checkout:</strong> <?= htmlspecialchars($lookup_row['pagbank_checkout_id'] ?? 'Não disponível'); ?></p>
                         <p><strong>ID do pagamento:</strong> <?= htmlspecialchars($lookup_refresh['payment_id'] ?? $lookup_row['pagbank_payment_id'] ?? 'Ainda não disponível'); ?></p>
+                        
+                        <!-- Status Ativo/Inativo -->
+                        <div style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                            <p style="margin: 0 0 0.5rem; color: var(--muted); font-weight: 600;">Status de Ativação:</p>
+                            <p style="margin: 0; color: <?= $lookup_row['is_active'] ? '#10b981' : '#ef4444' ?>; font-weight: 600;">
+                                <?= $lookup_row['is_active'] ? '✅ Ativo' : '❌ Desativado' ?>
+                            </p>
+                        </div>
+
+                        <!-- Comprovante de Pagamento -->
+                        <?php if (!empty($lookup_row['payment_receipt'])): ?>
+                            <div style="margin: 1rem 0; padding: 1rem; background: rgba(244, 208, 63, 0.1); border-radius: 8px;">
+                                <p style="margin: 0 0 0.5rem; color: var(--muted); font-weight: 600;">📄 Comprovante:</p>
+                                <p style="margin: 0; color: #f59e0b;">
+                                    <a href="<?= htmlspecialchars($lookup_row['payment_receipt'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="color: #fbbf24; text-decoration: underline;">
+                                        Ver comprovante
+                                    </a>
+                                </p>
+                            </div>
+                        <?php endif; ?>
+
                         <?php if (!empty($lookup_refresh['checkout_url'] ?? null)): ?>
                             <p><strong>URL do Checkout:</strong> <a href="<?= htmlspecialchars($lookup_refresh['checkout_url'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank">Abrir checkout</a></p>
                         <?php endif; ?>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="refreshPagbankStatus(<?= (int)$lookup_row['id']; ?>, '<?= htmlspecialchars($lookup_result['table'], ENT_QUOTES, 'UTF-8'); ?>')">Atualizar status PagBank</button>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-top: 1.5rem;">
+                            <button type="button" class="btn btn-primary" onclick="refreshPagbankStatus(<?= (int)$lookup_row['id']; ?>, '<?= htmlspecialchars($lookup_result['table'], ENT_QUOTES, 'UTF-8'); ?>')">🔄 Atualizar Status</button>
+                            
                             <?php if (!empty($lookup_row['pagbank_checkout_id'])): ?>
-                                <button type="button" class="btn btn-secondary" onclick="activatePagbankCheckout(<?= (int)$lookup_row['id']; ?>, '<?= htmlspecialchars($lookup_result['table'], ENT_QUOTES, 'UTF-8'); ?>')">Ativar checkout</button>
+                                <button type="button" class="btn btn-secondary" onclick="activatePagbankCheckout(<?= (int)$lookup_row['id']; ?>, '<?= htmlspecialchars($lookup_result['table'], ENT_QUOTES, 'UTF-8'); ?>')">🔗 Ativar Checkout</button>
+                            <?php endif; ?>
+
+                            <!-- Botão Ativar/Desativar -->
+                            <form method="post" action="admin_action.php" style="display: contents;">
+                                <input type="hidden" name="action" value="toggle_active">
+                                <input type="hidden" name="user_id" value="<?= (int)$lookup_row['id']; ?>">
+                                <input type="hidden" name="user_table" value="<?= htmlspecialchars($lookup_result['table'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <button type="submit" class="btn" style="background: <?= $lookup_row['is_active'] ? 'rgba(239, 68, 68, 0.2); color: #ef4444;' : 'rgba(16, 185, 129, 0.2); color: #10b981;' ?>">
+                                    <?= $lookup_row['is_active'] ? '🔒 Desativar' : '🔓 Ativar' ?>
+                                </button>
+                            </form>
+
+                            <!-- Botão Aprovar Comprovante (se existe e está pendente) -->
+                            <?php if (!empty($lookup_row['payment_receipt']) && $lookup_row['payment_status'] === 'comprovante_enviado'): ?>
+                                <form method="post" action="admin_action.php" style="display: contents;">
+                                    <input type="hidden" name="action" value="approve_receipt">
+                                    <input type="hidden" name="user_id" value="<?= (int)$lookup_row['id']; ?>">
+                                    <input type="hidden" name="user_table" value="<?= htmlspecialchars($lookup_result['table'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <button type="submit" class="btn" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">
+                                        ✅ Aprovar Comprovante
+                                    </button>
+                                </form>
                             <?php endif; ?>
                         </div>
                     </div>

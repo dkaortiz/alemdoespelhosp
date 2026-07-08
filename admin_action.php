@@ -322,6 +322,93 @@ if ($id && in_array($tipo, ['peregrino', 'anfitriao'])) {
     exit;
 }
 
+// ATIVAR/DESATIVAR INSCRIÇÃO
+if ($action === 'toggle_active') {
+    $user_id = (int) ($_POST['user_id'] ?? 0);
+    $user_table = $_POST['user_table'] ?? '';
+
+    if ($user_id <= 0 || !in_array($user_table, ['peregrinos', 'anfitrioes'])) {
+        $_SESSION['admin_error'] = "✗ Dados inválidos";
+        header('Location: admin.php');
+        exit;
+    }
+
+    // Buscar status atual
+    $stmt = $mysqli->prepare("SELECT is_active FROM `$user_table` WHERE id = ?");
+    if (!$stmt) {
+        $_SESSION['admin_error'] = "✗ Erro ao buscar registro";
+        header('Location: admin.php');
+        exit;
+    }
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!$row) {
+        $_SESSION['admin_error'] = "✗ Registro não encontrado";
+        header('Location: admin.php');
+        exit;
+    }
+
+    $new_active = !$row['is_active']; // Toggle
+
+    // Atualizar
+    $stmt = $mysqli->prepare("UPDATE `$user_table` SET is_active = ? WHERE id = ?");
+    if (!$stmt) {
+        $_SESSION['admin_error'] = "✗ Erro ao atualizar registro";
+        header('Location: admin.php');
+        exit;
+    }
+    $stmt->bind_param('ii', $new_active, $user_id);
+    if ($stmt->execute()) {
+        $_SESSION['admin_success'] = $new_active ? "✓ Inscrição ativada com sucesso!" : "✓ Inscrição desativada com sucesso!";
+    } else {
+        $_SESSION['admin_error'] = "✗ Erro ao atualizar inscrição";
+    }
+    $stmt->close();
+
+    header('Location: admin.php');
+    exit;
+}
+
+// APROVAR COMPROVANTE
+if ($action === 'approve_receipt') {
+    $user_id = (int) ($_POST['user_id'] ?? 0);
+    $user_table = $_POST['user_table'] ?? '';
+
+    if ($user_id <= 0 || !in_array($user_table, ['peregrinos', 'anfitrioes'])) {
+        $_SESSION['admin_error'] = "✗ Dados inválidos";
+        header('Location: admin.php');
+        exit;
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $stmt = $mysqli->prepare("
+        UPDATE `$user_table` 
+        SET payment_status = 'confirmado', payment_confirmed_by = ?, payment_confirmed_at = ? 
+        WHERE id = ?
+    ");
+
+    if (!$stmt) {
+        $_SESSION['admin_error'] = "✗ Erro ao aprovar comprovante";
+        header('Location: admin.php');
+        exit;
+    }
+
+    $stmt->bind_param('ssi', $admin_username, $now, $user_id);
+    if ($stmt->execute()) {
+        $_SESSION['admin_success'] = "✓ Comprovante aprovado e inscrição confirmada!";
+    } else {
+        $_SESSION['admin_error'] = "✗ Erro ao aprovar comprovante";
+    }
+    $stmt->close();
+
+    header('Location: admin.php');
+    exit;
+}
+
 if ($is_ajax) {
     sendJsonResponse(['success' => false, 'message' => 'Ação inválida ou não reconhecida'], 400);
 }

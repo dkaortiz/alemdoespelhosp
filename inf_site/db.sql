@@ -9,10 +9,9 @@ CREATE TABLE IF NOT EXISTS peregrinos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    telefone VARCHAR(50),
     whatsapp VARCHAR(50),
     genero ENUM('masculino', 'feminino') NOT NULL,
-    categoria VARCHAR(100),
+    is_active BOOLEAN DEFAULT TRUE COMMENT 'Se o registro está ativo (aprovado pelo admin)',
     payment_method ENUM('pix', 'cartao') NOT NULL DEFAULT 'pix',
     payment_status ENUM('pendente', 'comprovante_enviado', 'confirmado', 'cancelado') NOT NULL DEFAULT 'pendente',
     payment_amount DECIMAL(8,2) DEFAULT 150.00,
@@ -21,10 +20,16 @@ CREATE TABLE IF NOT EXISTS peregrinos (
     payment_confirmed_by VARCHAR(100),
     payment_confirmed_at DATETIME,
     valor DECIMAL(8,2) DEFAULT 150.00,
+    endereco TEXT,
+    problema_saude VARCHAR(10),
+    problema_saude_descricao TEXT,
+    usa_remedio VARCHAR(10),
+    remedio_descricao TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_email (email),
     INDEX idx_status (payment_status),
-    INDEX idx_genero (genero)
+    INDEX idx_genero (genero),
+    INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- TABELA: ANFITRIÕES (Sem limite de vagas)
@@ -32,9 +37,9 @@ CREATE TABLE IF NOT EXISTS anfitrioes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    telefone VARCHAR(50),
     whatsapp VARCHAR(50),
     funcao VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE COMMENT 'Se o registro está ativo (aprovado pelo admin)',
     peregrino_anterior BOOLEAN DEFAULT FALSE COMMENT 'Se foi peregrino em edições anteriores',
     payment_method ENUM('pix', 'cartao') NOT NULL DEFAULT 'pix',
     payment_status ENUM('pendente', 'comprovante_enviado', 'confirmado', 'cancelado') NOT NULL DEFAULT 'pendente',
@@ -44,9 +49,15 @@ CREATE TABLE IF NOT EXISTS anfitrioes (
     payment_confirmed_by VARCHAR(100),
     payment_confirmed_at DATETIME,
     valor DECIMAL(8,2) DEFAULT 150.00,
+    endereco TEXT,
+    problema_saude VARCHAR(10),
+    problema_saude_descricao TEXT,
+    usa_remedio VARCHAR(10),
+    remedio_descricao TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_email (email),
-    INDEX idx_status (payment_status)
+    INDEX idx_status (payment_status),
+    INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- TABELA: EDIÇÕES

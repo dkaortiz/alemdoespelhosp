@@ -316,25 +316,11 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         </div>
 
                         <div class="form-group">
-                            <label>Telefone</label>
-                            <input type="tel" name="telefone" placeholder="DDD + número">
-                        </div>
-
-                        <div class="form-group">
                             <label>Gênero *</label>
                             <select name="genero" required>
                                 <option value="">Selecione</option>
                                 <option value="masculino">Masculino</option>
                                 <option value="feminino">Feminino</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Categoria *</label>
-                            <select name="categoria" required>
-                                <option value="">Selecione</option>
-                                <option value="completo">Peregrino Completo</option>
-                                <option value="dia">Peregrino Dia</option>
                             </select>
                         </div>
 
@@ -372,16 +358,8 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         </div>
 
                         <div class="form-group">
-                            <label>WhatsApp</label>
-                            <input type="tel" name="whatsapp" placeholder="DDD + número">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Forma de pagamento</label>
-                            <div style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(67, 56, 202, 0.08); border: 1px solid rgba(67, 56, 202, 0.2); color: var(--text);">
-                                Checkout PagBank
-                            </div>
-                            <input type="hidden" name="payment_method" value="pagbank">
+                            <label>WhatsApp *</label>
+                            <input type="tel" name="whatsapp" placeholder="DDD + número" required>
                         </div>
 
                         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
@@ -417,11 +395,6 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         <div class="form-group">
                             <label>Email *</label>
                             <input type="email" name="email" placeholder="seu@email.com" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Telefone</label>
-                            <input type="tel" name="telefone" placeholder="DDD + número">
                         </div>
 
                         <div class="form-group">
@@ -463,8 +436,8 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                         </div>
 
                         <div class="form-group">
-                            <label>WhatsApp</label>
-                            <input type="tel" name="whatsapp" placeholder="DDD + número">
+                            <label>WhatsApp *</label>
+                            <input type="tel" name="whatsapp" placeholder="DDD + número" required>
                         </div>
 
                         <div class="form-group">
@@ -472,14 +445,6 @@ $vagasF = getVagas($mysqli, 'feminino', $limite_mulher);
                                 <input type="checkbox" name="foi_peregrino">
                                 Fui Peregrino em edição anterior
                             </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Forma de pagamento</label>
-                            <div style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(67, 56, 202, 0.08); border: 1px solid rgba(67, 56, 202, 0.2); color: var(--text);">
-                                Checkout PagBank
-                            </div>
-                            <input type="hidden" name="payment_method" value="pagbank">
                         </div>
 
                         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">

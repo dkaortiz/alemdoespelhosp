@@ -42,7 +42,7 @@ Antes de criar o checkout, você precisa obter um token de acesso.
 function getPagbankAccessToken() {
     global $PAGBANK_CLIENT_ID, $PAGBANK_CLIENT_SECRET;
 
-    $url = 'https://sandbox.api.pagseguro.com/oauth2/token';
+    $url = 'https://api.pagseguro.com/oauth2/token';
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -74,7 +74,7 @@ function getPagbankAccessToken() {
 Depois de obter o token, crie o checkout no endpoint:
 
 ```text
-https://sandbox.api.pagseguro.com/checkout
+https://api.pagseguro.com/checkout
 ```
 
 ### Exemplo em PHP
@@ -109,7 +109,7 @@ function createPagbankCheckout($orderId, $customerName, $customerEmail, $amountC
         ],
     ];
 
-    $ch = curl_init('https://sandbox.api.pagseguro.com/checkout');
+    $ch = curl_init('https://api.pagseguro.com/checkout');
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [

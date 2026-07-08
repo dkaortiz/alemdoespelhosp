@@ -4,17 +4,17 @@ session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
-    $telefone = trim($_POST['telefone'] ?? '');
-    $phoneDigits = normalizePhoneForLookup($telefone);
+    $whatsapp = trim($_POST['whatsapp'] ?? '');
+    $whatsappDigits = normalizePhoneForLookup($whatsapp);
 
-    if ($email === '' && $phoneDigits === '') {
-        $error = 'Informe o e-mail ou telefone.';
+    if ($email === '' && $whatsappDigits === '') {
+        $error = 'Informe o e-mail ou WhatsApp.';
     } else {
         $found = null;
         $tables = ['peregrinos' => 'peregrino', 'anfitrioes' => 'anfitriao'];
 
         foreach ($tables as $table => $type) {
-            $query = "SELECT id, nome, email, telefone, payment_status, pagbank_checkout_id, pagbank_status, pagbank_payment_id, pagbank_payload FROM `$table` WHERE 1=1";
+            $query = "SELECT id, nome, email, whatsapp, payment_status, pagbank_checkout_id, pagbank_status, pagbank_payment_id, pagbank_payload, payment_receipt, is_active FROM `$table` WHERE 1=1";
             $params = [];
             $types = '';
 
@@ -24,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $types .= 's';
             }
 
-            if ($phoneDigits !== '') {
-                $query .= " AND REPLACE(REPLACE(REPLACE(telefone, '(', ''), ')', ''), '-', '') LIKE ?";
-                $params[] = '%' . $phoneDigits . '%';
+            if ($whatsappDigits !== '') {
+                $query .= " AND REPLACE(REPLACE(REPLACE(whatsapp, '(', ''), ')', ''), '-', '') LIKE ?";
+                $params[] = '%' . $whatsappDigits . '%';
                 $types .= 's';
             }
 
@@ -44,6 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
 
             if ($row) {
+                // Verificar se está ativo
+                if (!$row['is_active']) {
+                    $error = 'Sua inscrição foi desativada. Contacte o administrador para mais informações.';
+                    break;
+                }
+
                 $found = ['table' => $table, 'type' => $type, 'row' => $row];
                 break;
             }
@@ -67,12 +73,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'type' => $found['type'],
                 'nome' => $row['nome'],
                 'email' => $row['email'],
-                'telefone' => $row['telefone'],
+                'telefone' => $row['whatsapp'],
                 'payment_status' => $refresh['status'] ?? $row['payment_status'] ?? 'pendente',
                 'pagbank_status' => $refresh['pagbank_status'] ?? $row['pagbank_status'] ?? null,
                 'pagbank_payment_id' => $refresh['payment_id'] ?? $row['pagbank_payment_id'] ?? null,
                 'pagbank_checkout_id' => $row['pagbank_checkout_id'] ?? null,
                 'checkout_url' => $refresh['checkout_url'] ?? null,
+                'payment_receipt' => $row['payment_receipt'] ?? null,
+                'is_active' => $row['is_active'] ?? true,
+                'registration_id' => $id,
+                'registration_type' => $found['type'],
             ];
 
             header('Location: user_area.php');
@@ -127,13 +137,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input id="email" type="email" name="email" placeholder="seu@email.com" required>
                         </div>
                         <div class="form-group">
-                            <label for="telefone">Telefone</label>
-                            <input id="telefone" type="tel" name="telefone" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="11999999999" required>
+                            <label for="whatsapp">WhatsApp</label>
+                            <input id="whatsapp" type="tel" name="whatsapp" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="11999999999" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Entrar</button>
                     </form>
 
-                    <p class="form-note">Se preferir, use o telefone ou o e-mail cadastrado na inscrição.</p>
+                    <p class="form-note">Se preferir, use o WhatsApp ou o e-mail cadastrado na inscrição.</p>
                 </div>
             </div>
         </div>

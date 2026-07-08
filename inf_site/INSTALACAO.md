@@ -112,7 +112,7 @@ $PAGBANK_REDIRECT_URL = 'https://seu-dominio.com/payment_return.php';
 7. Crie um endpoint para iniciar o checkout e fazer a chamada para:
 
 ```text
-https://sandbox.api.pagseguro.com/checkout
+https://api.pagseguro.com/checkout
 ```
 
 8. No corpo da requisição, envie os dados do pedido, por exemplo:
