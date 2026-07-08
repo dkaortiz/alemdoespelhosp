@@ -67,16 +67,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_action']) && is
 // Ações admin - Aprovar/Rejeitar pagamentos
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isAdminAuthenticated()) {
     $action = $_POST['action'];
-    $target = $_POST['target'] ?? '';
-    $target_id = intval($_POST['target_id'] ?? 0);
+    $target = $_POST['target'] ?? $_POST['table'] ?? '';
+    $target_id = intval($_POST['target_id'] ?? $_POST['id'] ?? 0);
+    $target_type = $_POST['tipo'] ?? '';
     $admin_username = $_SESSION['admin_username'] ?? 'admin';
 
-    if ($action === 'approve' && in_array($target, ['peregrinos','anfitrioes'])) {
-        $stmt = $mysqli->prepare("UPDATE {$target} SET payment_status = 'confirmado', payment_confirmed_by = ?, payment_confirmed_at = NOW() WHERE id = ?");
-        if ($stmt) {
-            $stmt->bind_param('si', $admin_username, $target_id);
-            $stmt->execute();
-            $stmt->close();
+    if ($action === 'approve') {
+        $resolved_target = '';
+        if ($target !== '' && in_array($target, ['peregrinos', 'anfitrioes'], true)) {
+            $resolved_target = $target;
+        } elseif ($target_type === 'peregrino') {
+            $resolved_target = 'peregrinos';
+        } elseif ($target_type === 'anfitriao') {
+            $resolved_target = 'anfitrioes';
+        }
+
+        if ($resolved_target !== '' && $target_id > 0) {
+            $stmt = $mysqli->prepare("UPDATE {$resolved_target} SET payment_status = 'confirmado', payment_confirmed_by = ?, payment_confirmed_at = NOW() WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param('si', $admin_username, $target_id);
+                $stmt->execute();
+                $stmt->close();
+            }
         }
     }
 
@@ -351,7 +363,7 @@ $pendentes = $mysqli->query(
         tr:hover { background: rgba(255, 107, 157, 0.05); }
         .status-badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
         .status-pendente { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .status-enviado { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .status-enviado, .status-comprovante-enviado { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
         .status-confirmado { background: rgba(16, 185, 129, 0.2); color: #10b981; }
         .btn-action { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; transition: all 0.3s ease; font-weight: 500; margin-right: 5px; }
         .btn-approve { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
@@ -821,11 +833,26 @@ $pendentes = $mysqli->query(
                             <td><?= !empty($row['payment_confirmed_by']) ? htmlspecialchars($row['payment_confirmed_by']) . ' em ' . date('d/m/y', strtotime($row['payment_confirmed_at'])) : '-' ?></td>
                             <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <button type="button" class="btn-action" style="background: rgba(67, 56, 202, 0.2); color: #3b82f6; border: 1px solid #3b82f6; cursor: pointer;" onclick="viewPeregrinoDetails(<?= $row['id'] ?>)">👁️ Ver</button>
+                                <button type="button" class="btn-action" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; cursor: pointer;" onclick="deletePeregrino(<?= (int) $row['id'] ?>, '<?= htmlspecialchars($row['nome'], ENT_QUOTES, 'UTF-8') ?>')">🗑️ Excluir</button>
+                                <form method="post" action="admin_action.php" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <input type="hidden" name="action" value="send_registration_email">
+                                    <input type="hidden" name="target" value="peregrinos">
+                                    <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="btn-action" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6; cursor: pointer;" title="Reenviar e-mail de cadastro">📧 Reenviar cadastro</button>
+                                </form>
+                                <form method="post" action="admin_action.php" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <input type="hidden" name="action" value="send_approval_email">
+                                    <input type="hidden" name="target" value="peregrinos">
+                                    <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; cursor: pointer;" title="Reenviar e-mail de aprovação">🎉 Reenviar aprovado</button>
+                                </form>
                                 <?php if ($row['payment_status'] !== 'confirmado'): ?>
-                                <form method="post" style="display: contents;">
+                                <form method="post" action="admin_action.php" style="display: inline-flex; align-items: center; gap: 0.25rem;">
                                     <input type="hidden" name="action" value="approve">
                                     <input type="hidden" name="target" value="peregrinos">
                                     <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                    <input type="hidden" name="tipo" value="peregrino">
                                     <button type="submit" class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; cursor: pointer;">✅ Aprovar</button>
                                 </form>
                                 <?php endif; ?>
@@ -916,11 +943,26 @@ $pendentes = $mysqli->query(
                             <td><?= !empty($row['payment_confirmed_by']) ? htmlspecialchars($row['payment_confirmed_by']) . ' em ' . date('d/m/y', strtotime($row['payment_confirmed_at'])) : '-' ?></td>
                             <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <button type="button" class="btn-action" style="background: rgba(244, 208, 63, 0.2); color: #f4d27a; border: 1px solid #f4d27a; cursor: pointer;" onclick="viewAnfitriaoDetails(<?= $row['id'] ?>)">👁️ Ver</button>
+                                <button type="button" class="btn-action" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; cursor: pointer;" onclick="deleteAnfitriao(<?= (int) $row['id'] ?>, '<?= htmlspecialchars($row['nome'], ENT_QUOTES, 'UTF-8') ?>')">🗑️ Excluir</button>
+                                <form method="post" action="admin_action.php" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <input type="hidden" name="action" value="send_registration_email">
+                                    <input type="hidden" name="target" value="anfitrioes">
+                                    <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="btn-action" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6; cursor: pointer;" title="Reenviar e-mail de cadastro">📧 Reenviar cadastro</button>
+                                </form>
+                                <form method="post" action="admin_action.php" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <input type="hidden" name="action" value="send_approval_email">
+                                    <input type="hidden" name="target" value="anfitrioes">
+                                    <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; cursor: pointer;" title="Reenviar e-mail de aprovação">🎉 Reenviar aprovado</button>
+                                </form>
                                 <?php if ($row['payment_status'] !== 'confirmado'): ?>
-                                <form method="post" style="display: contents;">
+                                <form method="post" action="admin_action.php" style="display: inline-flex; align-items: center; gap: 0.25rem;">
                                     <input type="hidden" name="action" value="approve">
                                     <input type="hidden" name="target" value="anfitrioes">
                                     <input type="hidden" name="target_id" value="<?= $row['id'] ?>">
+                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                    <input type="hidden" name="tipo" value="anfitriao">
                                     <button type="submit" class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; cursor: pointer;">✅ Aprovar</button>
                                 </form>
                                 <?php endif; ?>

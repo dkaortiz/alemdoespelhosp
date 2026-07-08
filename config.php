@@ -101,6 +101,254 @@ if ($mysqli->connect_errno) {
 }
 $mysqli->set_charset('utf8mb4');
 
+function normalizeRegistrationType($type): string {
+    $normalized = strtolower(trim((string) $type));
+    if ($normalized === '' || strpos($normalized, 'pere') !== false) {
+        return 'peregrino';
+    }
+
+    return 'anfitriao';
+}
+
+function sendEmailMessage(string $to, string $subject, string $htmlBody, string $altBody = '', array $inlineImages = []): bool {
+    $host = trim((string) getenv('SMTP_HOST')) ?: 'email-ssl.com.br';
+    $port = (int) (trim((string) getenv('SMTP_PORT')) ?: '465');
+    $username = trim((string) getenv('SMTP_USERNAME')) ?: 'contato@alemdoespelhosp.com.br';
+    $password = trim((string) getenv('SMTP_PASSWORD')) ?: '01062021Midi@';
+    $from = trim((string) getenv('SMTP_FROM')) ?: 'contato@alemdoespelhosp.com.br';
+    $fromName = trim((string) getenv('SMTP_FROM_NAME')) ?: 'Alem do Espelho';
+    $secure = strtolower(trim((string) getenv('SMTP_SECURE')) ?: 'ssl');
+
+    $logPath = __DIR__ . '/uploads/email-errors.log';
+    $logError = function (string $message) use ($logPath): void {
+        error_log($message);
+        @file_put_contents($logPath, date('Y-m-d H:i:s') . ' ' . $message . PHP_EOL, FILE_APPEND);
+    };
+
+    $connectHost = ($secure === 'ssl' || $port === 465) ? 'ssl://' . $host : $host;
+    $context = stream_context_create([
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true,
+        ],
+    ]);
+
+    $socket = @stream_socket_client($connectHost . ':' . $port, $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $context);
+    if (!$socket) {
+        $logError('SMTP connect failed: ' . $errstr);
+    } else {
+        stream_set_timeout($socket, 20);
+
+        $readResponse = function ($socket) {
+            $buffer = '';
+            while (true) {
+                $line = fgets($socket, 515);
+                if ($line === false) {
+                    return trim($buffer);
+                }
+
+                $buffer .= $line;
+                if (preg_match('/^\d{3}\s/', $line) === 1) {
+                    return trim($buffer);
+                }
+            }
+        };
+
+        $sendCommand = function ($socket, $command) use ($readResponse) {
+            $written = fwrite($socket, $command . "\r\n");
+            if ($written === false) {
+                return '';
+            }
+
+            return $readResponse($socket);
+        };
+
+        $response = $readResponse($socket);
+        if ($response === '' || strpos($response, '220') !== 0) {
+            $logError('SMTP greeting failed: ' . $response);
+            fclose($socket);
+            return false;
+        }
+
+        $ehlo = $sendCommand($socket, 'EHLO localhost');
+        if (strpos($ehlo, '250') !== 0) {
+            $logError('SMTP EHLO failed: ' . $ehlo);
+            fclose($socket);
+            return false;
+        }
+
+        if ($port === 587 && $secure !== 'ssl') {
+            $starttls = $sendCommand($socket, 'STARTTLS');
+            if (strpos($starttls, '220') !== 0) {
+                $logError('SMTP STARTTLS failed: ' . $starttls);
+                fclose($socket);
+                return false;
+            }
+            $crypto = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            if ($crypto !== true) {
+                $logError('SMTP crypto handshake failed');
+                fclose($socket);
+                return false;
+            }
+            $sendCommand($socket, 'EHLO localhost');
+        }
+
+        $authResponse = $sendCommand($socket, 'AUTH LOGIN');
+        if (strpos($authResponse, '334') === 0) {
+            $userResponse = $sendCommand($socket, base64_encode($username));
+            if (strpos($userResponse, '334') !== 0) {
+                $logError('SMTP username challenge failed: ' . $userResponse);
+                fclose($socket);
+                return false;
+            }
+
+            $passResponse = $sendCommand($socket, base64_encode($password));
+            if (strpos($passResponse, '235') !== 0) {
+                $logError('SMTP password challenge failed: ' . $passResponse);
+                fclose($socket);
+                return false;
+            }
+        } else {
+            $authPlain = base64_encode("\0" . $username . "\0" . $password);
+            $plainResponse = $sendCommand($socket, 'AUTH PLAIN ' . $authPlain);
+            if (strpos($plainResponse, '235') !== 0) {
+                $logError('SMTP AUTH PLAIN failed: ' . $plainResponse);
+                fclose($socket);
+                return false;
+            }
+        }
+
+        $mailFromResponse = $sendCommand($socket, 'MAIL FROM:<'.$from.'>');
+        if (strpos($mailFromResponse, '250') !== 0) {
+            $logError('SMTP MAIL FROM failed: ' . $mailFromResponse);
+            fclose($socket);
+            return false;
+        }
+
+        $rcptResponse = $sendCommand($socket, 'RCPT TO:<'.$to.'>');
+        if (strpos($rcptResponse, '250') !== 0 && strpos($rcptResponse, '251') !== 0) {
+            $logError('SMTP RCPT TO failed: ' . $rcptResponse);
+            fclose($socket);
+            return false;
+        }
+
+        $dataResponse = $sendCommand($socket, 'DATA');
+        if (strpos($dataResponse, '354') !== 0) {
+            $logError('SMTP DATA failed: ' . $dataResponse);
+            fclose($socket);
+            return false;
+        }
+
+        $boundary = '----=_Part_' . md5(uniqid('', true));
+        $encodedFromName = '=?UTF-8?B?' . base64_encode($fromName) . '?=';
+        $message = "From: {$encodedFromName} <{$from}>\r\n";
+        $message .= "To: {$to}\r\n";
+        $message .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+        $message .= "MIME-Version: 1.0\r\n";
+        $message .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n";
+        $message .= "\r\n";
+        $message .= "--{$boundary}\r\n";
+        $message .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $message .= "Content-Transfer-Encoding: 7bit\r\n\r\n";
+        $message .= ($altBody !== '' ? $altBody : strip_tags($htmlBody)) . "\r\n\r\n";
+        $message .= "--{$boundary}\r\n";
+        $message .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $message .= "Content-Transfer-Encoding: 7bit\r\n\r\n";
+        $message .= $htmlBody . "\r\n\r\n";
+
+        foreach ($inlineImages as $cid => $imagePath) {
+            if (!is_string($imagePath) || $imagePath === '' || !is_file($imagePath)) {
+                continue;
+            }
+
+            $imageMime = mime_content_type($imagePath) ?: 'image/png';
+            $imageData = file_get_contents($imagePath);
+            $message .= "--{$boundary}\r\n";
+            $message .= "Content-Type: {$imageMime}; name=\"" . basename($imagePath) . "\"\r\n";
+            $message .= "Content-Transfer-Encoding: base64\r\n";
+            $message .= "Content-ID: <{$cid}>\r\n";
+            $message .= "Content-Disposition: inline; filename=\"" . basename($imagePath) . "\"\r\n\r\n";
+            $message .= chunk_split(base64_encode($imageData), 76, "\r\n") . "\r\n";
+        }
+
+        $message .= "--{$boundary}--\r\n";
+        $message .= ".\r\n";
+
+        fwrite($socket, $message);
+        $finishResponse = $readResponse($socket);
+        fclose($socket);
+
+        if (strpos($finishResponse, '250') === 0) {
+            return true;
+        }
+
+        $logError('SMTP DATA final response failed: ' . $finishResponse);
+    }
+
+    $headers = [];
+    $headers[] = 'From: ' . $fromName . ' <' . $from . '>';
+    $headers[] = 'Reply-To: ' . $from;
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: text/html; charset=UTF-8';
+    $headers[] = 'X-Mailer: PHP/' . phpversion();
+
+    $subjectEncoded = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $mailResult = @mail($to, $subjectEncoded, $htmlBody, implode("\r\n", $headers), '-f' . $from);
+    if ($mailResult) {
+        return true;
+    }
+
+    $logError('Fallback mail() failed for ' . $to);
+    return false;
+}
+
+function sendRegistrationEmail(string $to, string $name, string $type, bool $isApproval = false): bool {
+    $normalizedType = normalizeRegistrationType($type);
+    $displayType = $normalizedType === 'anfitriao' ? 'Anfitrião' : 'Peregrino';
+    $subject = $isApproval
+        ? ($normalizedType === 'anfitriao' ? 'Anfitrião Parabens Pagamento Aprovado' : 'Peregrino Parabens Pagamento Aprovado')
+        : ($normalizedType === 'anfitriao' ? 'Bem vindo Anfitrião - Cadastro @alemdoespelhosp' : 'Bem vindo Peregrino - Cadastro @alemdoespelhosp');
+
+    $logoPath = __DIR__ . '/public/Logosemfundo.png';
+    $approvalImagePath = __DIR__ . '/public/aprovado.png';
+    $registrationImagePath = __DIR__ . '/public/email criado.png';
+    $footerImagePath = $isApproval ? $approvalImagePath : $registrationImagePath;
+    $title = $isApproval ? 'SEU PAGAMENTO FOI APROVADO!' : 'SEU CADASTRO FOI REALIZADO!';
+    $bodyText = $isApproval
+        ? 'Seu pagamento foi aprovado e você já pode participar do evento com tranquilidade.'
+        : 'Obrigado por se inscrever. Estamos ansiosos para recebê-lo(a) no evento.';
+
+    $templatePath = $isApproval ? __DIR__ . '/email/Aprovado.html' : __DIR__ . '/email/cadastro.html';
+    $templateHtml = '';
+
+    if (is_file($templatePath)) {
+        $templateHtml = file_get_contents($templatePath);
+        if ($templateHtml !== false) {
+            $templateHtml = str_replace('{{NOME}}', htmlspecialchars($name, ENT_QUOTES, 'UTF-8'), $templateHtml);
+            $templateHtml = str_replace('{{TITULO}}', htmlspecialchars($title, ENT_QUOTES, 'UTF-8'), $templateHtml);
+            $templateHtml = str_replace('{{SUBTITULO}}', htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'), $templateHtml);
+            $templateHtml = str_replace('{{LINHA2}}', $isApproval ? 'ESPERAMOS VOCÊ NO DIA' : 'SEU CADASTRO ESTÁ PRONTO', $templateHtml);
+            $templateHtml = str_replace('{{DATA}}', $isApproval ? '7 DE AGOSTO!' : 'AGUARDE OS DETALHES!', $templateHtml);
+        } else {
+            $templateHtml = '';
+        }
+    }
+
+    $htmlBody = $templateHtml !== ''
+        ? $templateHtml
+        : '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#111827;font-family:Arial,sans-serif;color:#fef3c7;"><div style="max-width:680px;margin:0 auto;padding:24px;background:linear-gradient(135deg,#1f2937,#111827);border-radius:16px;overflow:hidden;"><div style="text-align:center;padding:20px 0 8px;"><img src="cid:email-image" alt="Imagem do e-mail" style="max-width:100%;border-radius:12px;display:block;margin:0 auto;" /></div><div style="padding:24px 20px 12px;"><h1 style="margin:0 0 12px;font-size:28px;color:#fbbf24;text-align:center;">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#fef3c7;">Olá, ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '!</p><p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#fef3c7;">' . htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8') . '</p><p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#fef3c7;">Tipo de inscrição: ' . htmlspecialchars($displayType, ENT_QUOTES, 'UTF-8') . '</p><p style="margin:12px 0 0;font-size:14px;color:#d1d5db;">Atenciosamente,<br/>Equipe @alemdoespelhosp</p></div></div></body></html>';
+
+    $altBody = 'Olá, ' . $name . '! ' . $bodyText . ' Tipo de inscrição: ' . $displayType;
+
+    $inlineImages = [
+        'logo-image' => $logoPath,
+        'approval-image' => $footerImagePath,
+    ];
+
+    return sendEmailMessage($to, $subject, $htmlBody, $altBody, $inlineImages);
+}
+
 function ensureRegistrationSchema($mysqli) {
     $tables = [
         'edicoes' => [

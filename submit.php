@@ -96,11 +96,16 @@ if ($form_type === 'peregrino') {
         exit;
     }
 
-    $types = str_repeat('s', 11) . 'ddss';
+    $types = str_repeat('s', 11) . 'dd' . str_repeat('s', 3);
     $stmt->bind_param($types, $nome, $email, $endereco, $whatsapp, $genero, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em, $pagbank_payment_link, $payment_link_type);
     $stmt->execute();
     $id = $mysqli->insert_id;
     $stmt->close();
+
+    $emailSent = sendRegistrationEmail($email, $nome, 'peregrino', false);
+    if (!$emailSent) {
+        error_log('Falha ao enviar e-mail de cadastro para peregrino ' . $email);
+    }
 
     // Calcular valor e criar checkout PagBank
     $amountCents = (int) round($payment_amount * 100);
@@ -155,11 +160,16 @@ if ($form_type === 'peregrino') {
         exit;
     }
 
-    $types = str_repeat('s', 5) . 'i' . str_repeat('s', 5) . 'ddss' . 's';
+    $types = str_repeat('s', 5) . 'i' . str_repeat('s', 6) . 'dd' . str_repeat('s', 3);
     $stmt->bind_param($types, $nome, $email, $endereco, $whatsapp, $funcao, $foi_peregrino, $problema_saude, $problema_saude_descricao, $usa_remedio, $remedio_descricao, $payment_method, $payment_status, $payment_amount, $payment_amount, $criado_em, $pagbank_payment_link, $payment_link_type);
     $stmt->execute();
     $id = $mysqli->insert_id;
     $stmt->close();
+
+    $emailSent = sendRegistrationEmail($email, $nome, 'anfitriao', false);
+    if (!$emailSent) {
+        error_log('Falha ao enviar e-mail de cadastro para anfitrião ' . $email);
+    }
 
     // Calcular valor e criar checkout PagBank
     $amountCents = (int) round($payment_amount * 100);

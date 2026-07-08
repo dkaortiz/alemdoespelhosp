@@ -69,7 +69,10 @@ if ($action === 'admin_cadastro_peregrino') {
             $stmt->bind_param('ssssdisss', $nome, $email, $genero, $telefone, $payment_status, $payment_amount, $pix_cents, $admin_username, $confirmed_at);
             
             if ($stmt->execute()) {
-                $_SESSION['admin_success'] = "✓ Peregrino '{$nome}' cadastrado com sucesso!";
+                $emailSent = sendRegistrationEmail($email, $nome, 'peregrino', false);
+                $_SESSION['admin_success'] = $emailSent
+                    ? "✓ Peregrino '{$nome}' cadastrado com sucesso e e-mail enviado!"
+                    : "✓ Peregrino '{$nome}' cadastrado com sucesso. O e-mail não pôde ser enviado.";
             } else {
                 $_SESSION['admin_error'] = "✗ Erro ao cadastrar peregrino.";
             }
@@ -106,7 +109,10 @@ if ($action === 'admin_cadastro_anfitriao') {
             $stmt->bind_param('ssssdisss', $nome, $email, $funcao, $telefone, $payment_status, $payment_amount, $pix_cents, $admin_username, $confirmed_at);
             
             if ($stmt->execute()) {
-                $_SESSION['admin_success'] = "✓ Anfitrião '{$nome}' cadastrado com sucesso!";
+                $emailSent = sendRegistrationEmail($email, $nome, 'anfitriao', false);
+                $_SESSION['admin_success'] = $emailSent
+                    ? "✓ Anfitrião '{$nome}' cadastrado com sucesso e e-mail enviado!"
+                    : "✓ Anfitrião '{$nome}' cadastrado com sucesso. O e-mail não pôde ser enviado.";
             } else {
                 $_SESSION['admin_error'] = "✗ Erro ao cadastrar anfitrião.";
             }
@@ -117,6 +123,44 @@ if ($action === 'admin_cadastro_anfitriao') {
     }
 
     header('Location: admin.php#cadastro');
+    exit;
+}
+
+// ENVIAR E-MAIL DE CADASTRO OU APROVAÇÃO
+if ($action === 'send_registration_email' || $action === 'send_approval_email') {
+    $target = $_POST['target'] ?? '';
+    $target_id = (int) ($_POST['target_id'] ?? 0);
+
+    if (in_array($target, ['peregrinos', 'anfitrioes'], true) && $target_id > 0) {
+        $stmt = $mysqli->prepare("SELECT nome, email FROM `$target` WHERE id = ? LIMIT 1");
+        if ($stmt) {
+            $stmt->bind_param('i', $target_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+
+            if ($row && !empty($row['email'])) {
+                $type = $target === 'peregrinos' ? 'peregrino' : 'anfitriao';
+                $sent = sendRegistrationEmail($row['email'], $row['nome'], $type, $action === 'send_approval_email');
+                if ($sent) {
+                    $_SESSION['admin_success'] = $action === 'send_approval_email'
+                        ? '✓ E-mail de aprovação enviado com sucesso!'
+                        : '✓ E-mail de cadastro enviado com sucesso!';
+                } else {
+                    $_SESSION['admin_error'] = '✗ Não foi possível enviar o e-mail.';
+                }
+            } else {
+                $_SESSION['admin_error'] = '✗ Registro não encontrado.';
+            }
+        } else {
+            $_SESSION['admin_error'] = '✗ Erro ao buscar registro.';
+        }
+    } else {
+        $_SESSION['admin_error'] = '✗ Dados inválidos.';
+    }
+
+    header('Location: admin.php');
     exit;
 }
 
@@ -318,8 +362,60 @@ if ($id && in_array($tipo, ['peregrino', 'anfitriao'])) {
     $stmt->execute();
     $stmt->close();
 
+    if ($action === 'approve') {
+        $rowStmt = $mysqli->prepare("SELECT nome, email FROM {$table} WHERE id = ? LIMIT 1");
+        if ($rowStmt) {
+            $rowStmt->bind_param('i', $id);
+            $rowStmt->execute();
+            $rowResult = $rowStmt->get_result();
+            $rowData = $rowResult->fetch_assoc();
+            $rowStmt->close();
+
+            if ($rowData && !empty($rowData['email'])) {
+                $type = $table === 'peregrinos' ? 'peregrino' : 'anfitriao';
+                $sent = sendRegistrationEmail($rowData['email'], $rowData['nome'], $type, true);
+                if (!$sent) {
+                    error_log('Falha ao enviar e-mail de aprovação para ' . $rowData['email']);
+                }
+            }
+        }
+    }
+
     header('Location: admin.php?success=' . ($action === 'approve' ? 'confirmado' : 'rejeitado'));
     exit;
+}
+
+if (($action ?? '') === 'approve' && isset($_POST['target']) && isset($_POST['target_id'])) {
+    $target = $_POST['target'] ?? '';
+    $target_id = (int) ($_POST['target_id'] ?? 0);
+    if (in_array($target, ['peregrinos', 'anfitrioes'], true) && $target_id > 0) {
+        $stmt = $mysqli->prepare("UPDATE {$target} SET payment_status = 'confirmado', payment_confirmed_by = ?, payment_confirmed_at = NOW() WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param('si', $admin_username, $target_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        $rowStmt = $mysqli->prepare("SELECT nome, email FROM {$target} WHERE id = ? LIMIT 1");
+        if ($rowStmt) {
+            $rowStmt->bind_param('i', $target_id);
+            $rowStmt->execute();
+            $rowResult = $rowStmt->get_result();
+            $rowData = $rowResult->fetch_assoc();
+            $rowStmt->close();
+
+            if ($rowData && !empty($rowData['email'])) {
+                $type = $target === 'peregrinos' ? 'peregrino' : 'anfitriao';
+                $sent = sendRegistrationEmail($rowData['email'], $rowData['nome'], $type, true);
+                if (!$sent) {
+                    error_log('Falha ao enviar e-mail de aprovação para ' . $rowData['email']);
+                }
+            }
+        }
+
+        header('Location: admin.php?success=confirmado');
+        exit;
+    }
 }
 
 // ATIVAR/DESATIVAR INSCRIÇÃO
